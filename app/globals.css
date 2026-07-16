@@ -1,0 +1,44 @@
+@import "tailwindcss";
+
+@variant dark (&:where(.dark, .dark *));
+
+/* Anthropic Warm Editorial Theme Tokens */
+:root {
+  --bg-app: #faf8f5;           /* Warm Ivory */
+  --bg-card: #f4f0ea;          /* Warm Cream Container */
+  --border-subtle: #e6dfd5;    /* Thin Sand Border */
+  --text-primary: #191816;     /* Deep Obsidian Charcoal */
+  --text-secondary: #6e675f;   /* Warm Muddy Gray */
+  --accent-color: #d97706;     /* Terracotta amber */
+  --accent-glow: rgba(217, 119, 6, 0.15);
+}
+
+.dark {
+  --bg-app: #131211;           /* Deep Charcoal Black */
+  --bg-card: #191816;          /* Deep Warm Obsidian Card */
+  --border-subtle: #2d2a26;    /* Dark Warm Ash Border */
+  --text-primary: #fcfbfa;     /* Ivory White */
+  --text-secondary: #9e958b;   /* Light Warm Gray */
+  --accent-color: #f59e0b;     /* Light Terracotta Amber */
+  --accent-glow: rgba(245, 158, 11, 0.2);
+}
+
+@theme {
+  --color-bg-app: var(--bg-app);
+  --color-bg-card: var(--bg-card);
+  --color-border-subtle: var(--border-subtle);
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-accent-primary: var(--accent-color);
+  --color-accent-glow: var(--accent-glow);
+}
+
+body {
+  background-color: var(--bg-app);
+  color: var(--text-primary);
+  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+.font-serif-anthropic {
+  font-family: Georgia, Cambria, "Times New Roman", Times, serif;
+}
