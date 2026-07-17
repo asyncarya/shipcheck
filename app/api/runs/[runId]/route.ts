@@ -25,3 +25,28 @@ export async function GET(
     );
   }
 }
+
+export async function DELETE(
+  request: Request,
+  { params }: { params: Promise<{ runId: string }> }
+) {
+  try {
+    const { runId } = await params;
+
+    const success = await runStore.deleteRun(runId);
+    if (!success) {
+      return NextResponse.json(
+        { error: { code: 'DELETE_FAILED', message: `Could not delete test run with ID ${runId}.` } },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({ success: true });
+  } catch (error: any) {
+    console.error('[API Delete Run] Error:', error);
+    return NextResponse.json(
+      { error: { code: 'SERVER_ERROR', message: error.message || 'An error occurred while deleting the run.' } },
+      { status: 500 }
+    );
+  }
+}

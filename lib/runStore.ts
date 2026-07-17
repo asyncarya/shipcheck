@@ -236,5 +236,47 @@ export const runStore = {
       }
     }
     return Array.from(globalRuns.values()).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  },
+
+  async deleteRun(id: string): Promise<boolean> {
+    globalRuns.delete(id);
+    
+    const client = await getSupabaseClient();
+    if (client) {
+      try {
+        // 1. Delete associated screenshot assets from Supabase Storage 'evidence' bucket
+        try {
+          const { data: files, error: listError } = await client.storage
+            .from('evidence')
+            .list(id);
+          
+          if (!listError && files && files.length > 0) {
+            const pathsToRemove = files.map(file => `${id}/${file.name}`);
+            const { error: removeError } = await client.storage
+              .from('evidence')
+              .remove(pathsToRemove);
+            
+            if (removeError) {
+              console.error(`[runStore] Failed to remove files from storage for run ${id}:`, removeError);
+            } else {
+              console.log(`[runStore] Successfully deleted ${pathsToRemove.length} screenshot files from storage for run ${id}`);
+            }
+          }
+        } catch (storageErr) {
+          console.error('[runStore] Storage deletion error:', storageErr);
+        }
+
+        // 2. Delete the run record from database
+        const { error } = await client.from('runs').delete().eq('id', id);
+        if (error) {
+          console.error('[runStore] Supabase delete error:', error);
+          return false;
+        }
+      } catch (err) {
+        console.error('[runStore] Supabase delete fail:', err);
+        return false;
+      }
+    }
+    return true;
   }
 };

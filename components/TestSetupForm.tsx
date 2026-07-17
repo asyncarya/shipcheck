@@ -81,7 +81,7 @@ export default function TestSetupForm() {
       }
 
       const run = runData.run;
-      router.push(`/test/${run.id}`);
+      router.push(`/dashboard/${run.id}`);
 
     } catch (err: any) {
       console.error('Error submitting form:', err);
