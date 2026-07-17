@@ -157,3 +157,41 @@ body {
   opacity: 0.15;
   text-shadow: 0 0 30px var(--accent-glow);
 }
+
+@keyframes slideOut {
+  0% {
+    transform: translateX(0);
+    opacity: 1;
+    max-height: 120px;
+    padding-top: 14px;
+    padding-bottom: 14px;
+    margin-top: 0;
+    margin-bottom: 0;
+    border-bottom-width: 1px;
+  }
+  30% {
+    transform: translateX(-100%);
+    opacity: 0;
+    max-height: 120px;
+    padding-top: 14px;
+    padding-bottom: 14px;
+    margin-top: 0;
+    margin-bottom: 0;
+    border-bottom-width: 1px;
+  }
+  100% {
+    transform: translateX(-100%);
+    opacity: 0;
+    max-height: 0px;
+    padding-top: 0px;
+    padding-bottom: 0px;
+    margin-top: 0px;
+    margin-bottom: 0px;
+    border-bottom-width: 0px;
+    overflow: hidden;
+  }
+}
+
+.animate-slide-out {
+  animation: slideOut 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
