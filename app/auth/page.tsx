@@ -7,7 +7,7 @@ import { createClient, hasSupabase } from '@/lib/supabase';
 import ThemeToggle from '@/components/ThemeToggle';
 import { 
   Shield, Sparkles, Mail, Lock, Loader2, AlertCircle, 
-  Key, Check, User
+  Key, Check, User, ArrowLeft
 } from 'lucide-react';
 
 export default function AuthPage() {
@@ -237,7 +237,14 @@ export default function AuthPage() {
       <div className="relative p-8 sm:p-12 md:p-20 flex flex-col justify-center items-center bg-bg-app border-l border-border-subtle/20">
         
         {/* Top-Right Toggle & Back Action */}
-        <div className="absolute top-8 right-8 flex items-center gap-3 z-10">
+        <div className="absolute top-8 left-8 right-8 flex items-center justify-between z-10">
+          <Link
+            href="/"
+            className="group flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-text-secondary hover:text-text-primary transition duration-200 border border-border-subtle bg-bg-card/50 px-3 py-1.5 rounded-lg active:scale-95 shadow-2xs"
+          >
+            <ArrowLeft size={12} className="group-hover:-translate-x-0.5 transition-transform duration-200" />
+            <span>Home</span>
+          </Link>
           <ThemeToggle />
         </div>
 

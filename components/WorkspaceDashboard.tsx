@@ -17,7 +17,9 @@ import {
   Clock, 
   AlertCircle, 
   Loader2,
-  ExternalLink
+  ExternalLink,
+  Sparkles,
+  Home
 } from 'lucide-react';
 
 interface WorkspaceDashboardProps {
@@ -77,7 +79,7 @@ export default function WorkspaceDashboard({
           </div>
 
           {/* Runs history scrollable list */}
-          <div className="flex-1 overflow-y-auto divide-y divide-border-subtle/50 max-h-[300px] md:max-h-none">
+          <div className="flex-1 overflow-y-auto max-h-[350px] md:max-h-none">
             {runs.length === 0 ? (
               <div className="px-6 py-8 text-center space-y-2">
                 <Clock size={20} className="mx-auto text-text-secondary/50" />
@@ -87,12 +89,16 @@ export default function WorkspaceDashboard({
               </div>
             ) : (
               paginatedRuns.map((run) => {
+                let borderStatusColor = 'border-l-blue-500';
                 let statusColor = 'bg-blue-500';
                 if (run.status === 'passed') {
+                  borderStatusColor = 'border-l-emerald-500';
                   statusColor = 'bg-emerald-500';
                 } else if (run.status === 'failed') {
+                  borderStatusColor = 'border-l-red-500';
                   statusColor = 'bg-red-500';
                 } else if (run.status === 'timed_out' || run.status === 'error') {
+                  borderStatusColor = 'border-l-amber-500';
                   statusColor = 'bg-amber-500';
                 }
 
@@ -100,13 +106,13 @@ export default function WorkspaceDashboard({
                   <Link
                     key={run.id}
                     href={`/test/${run.id}`}
-                    className="group px-6 py-3.5 block hover:bg-bg-app/40 hover:border-l-2 hover:border-accent-primary border-l-2 border-transparent transition-all duration-200"
+                    className={`w-full px-6 py-3.5 block bg-bg-card/5 hover:bg-bg-card/45 border-b border-border-subtle/80 transition-all duration-200 group border-l-2 ${borderStatusColor}`}
                   >
                     <div className="flex items-center justify-between gap-2">
                       <span className="text-[10px] text-text-secondary/60 font-mono">#{run.id.slice(-6)}</span>
-                      <span className="text-[10px] text-text-secondary/80 group-hover:text-accent-primary transition flex items-center gap-1">
+                      <span className="text-[9px] text-text-secondary/80 group-hover:text-accent-primary transition flex items-center gap-1 font-bold uppercase tracking-wider">
                         <span>Details</span>
-                        <ExternalLink size={8} />
+                        <ExternalLink size={7} />
                       </span>
                     </div>
                     
@@ -117,7 +123,7 @@ export default function WorkspaceDashboard({
                       {run.url}
                     </p>
 
-                    <div className="flex items-center gap-2 mt-2">
+                    <div className="flex items-center gap-2 mt-2 pt-2 border-t border-border-subtle/30">
                       <span className={`w-1.5 h-1.5 rounded-full ${statusColor}`} />
                       <span className="text-[9px] uppercase font-bold text-text-secondary">
                         {run.status === 'created' ? 'queued' : run.status}
@@ -195,6 +201,14 @@ export default function WorkspaceDashboard({
                       </p>
                     </div>
                   </div>
+
+                  <Link
+                    href="/"
+                    className="w-full flex items-center gap-2 px-3 py-1.5 text-xs font-semibold text-text-secondary hover:text-text-primary hover:bg-bg-app/50 border border-transparent hover:border-border-subtle rounded-xl transition cursor-pointer"
+                  >
+                    <Home size={12} className="text-accent-primary" />
+                    <span>Go to Home Page</span>
+                  </Link>
                   
                   <button
                     onClick={handleSignOut}
@@ -217,18 +231,29 @@ export default function WorkspaceDashboard({
           <ThemeToggle />
         </div>
 
+        {/* Decorative Grid and Glow Backgrounds */}
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808006_1px,transparent_1px),linear-gradient(to_bottom,#80808006_1px,transparent_1px)] bg-[size:16px_16px] [mask-image:radial-gradient(ellipse_55%_55%_at_50%_40%,#000_80%,transparent_100%)] pointer-events-none" />
+        <div className="absolute top-0 left-1/4 w-80 h-80 rounded-full bg-accent-primary/5 blur-3xl pointer-events-none z-0" />
+
         <div className="w-full max-w-3xl mx-auto px-6 py-12 md:py-20 z-10 space-y-8">
-          <div className="space-y-3.5 text-center sm:text-left">
-            <h1 className="text-3xl font-bold font-serif-anthropic tracking-tight sm:text-4xl text-text-primary">
-              Launch Browser automation
-            </h1>
-            <p className="text-sm text-text-secondary max-w-lg leading-relaxed">
-              Describe a website target URL and the goal task you wish to verify. The AI assistant constructs step actions and runs them dynamically.
-            </p>
+          <div className="space-y-4 text-center sm:text-left flex flex-col items-center sm:items-start animate-fade-in-up">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 text-[10px] font-bold uppercase tracking-wider rounded-full border border-border-subtle bg-bg-card/75 text-accent-primary shadow-3xs">
+              <Sparkles size={11} className="text-accent-primary animate-pulse" />
+              <span>Autonomous Verification Engine</span>
+            </div>
+            <div className="space-y-2.5">
+              <h1 className="text-3xl font-bold font-serif-anthropic tracking-tight sm:text-4xl text-text-primary">
+                Launch <span className="text-accent-primary font-serif-anthropic italic font-normal">browser automation</span>
+              </h1>
+              <p className="text-sm text-text-secondary max-w-lg leading-relaxed">
+                Describe a website target URL and the goal task you wish to verify. The AI assistant constructs step actions and runs them dynamically.
+              </p>
+            </div>
           </div>
 
           {/* Form wrapper */}
-          <div className="bg-bg-card border border-border-subtle rounded-2xl p-6 sm:p-8 shadow-sm">
+          <div className="bg-bg-card/70 border border-border-subtle backdrop-blur-md rounded-2xl p-6 sm:p-8 shadow-xs relative overflow-hidden group hover:border-accent-primary/10 transition-all duration-300 animate-fade-in-up">
+            <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-accent-primary/5 via-accent-primary/30 to-accent-primary/5" />
             <TestSetupForm />
           </div>
         </div>

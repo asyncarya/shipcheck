@@ -9,7 +9,7 @@ import ConsoleErrors from '@/components/ConsoleErrors';
 import BugReport from '@/components/BugReport';
 import SeverityBadge from '@/components/SeverityBadge';
 import ThemeToggle from '@/components/ThemeToggle';
-import { ArrowLeft, RefreshCw, Play, AlertCircle, Loader2, Sparkles, CheckCircle2, History, Clock } from 'lucide-react';
+import { ArrowLeft, RefreshCw, Play, AlertCircle, Loader2, Sparkles, CheckCircle2, Clock } from 'lucide-react';
 import { TestRun, BugReport as BugReportType } from '@/lib/schemas';
 
 interface RunPageProps {
@@ -31,14 +31,6 @@ export default function RunPage({ params }: RunPageProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalTab, setModalTab] = useState<'steps' | 'analysis'>('steps');
   const [hasOpenedModal, setHasOpenedModal] = useState(false);
-
-  const [runs, setRuns] = useState<TestRun[]>([]);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
-  const ITEMS_PER_PAGE = 5;
-
-  const totalPages = Math.max(1, Math.ceil(runs.length / ITEMS_PER_PAGE));
-  const paginatedRuns = runs.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
 
   const triggerAnalysis = async () => {
     setAnalyzing(true);
@@ -130,22 +122,6 @@ export default function RunPage({ params }: RunPageProps) {
       }
     };
   }, [runId, selectedStepId]);
-
-  // Load runs history on mount and state changes
-  useEffect(() => {
-    const fetchRunsHistory = async () => {
-      try {
-        const res = await fetch('/api/runs');
-        if (res.ok) {
-          const data = await res.json();
-          setRuns(data.runs || []);
-        }
-      } catch (err) {
-        console.error('Failed to load history runs:', err);
-      }
-    };
-    fetchRunsHistory();
-  }, [runId, run?.status]);
 
   // Trigger Results Modal on completion
   useEffect(() => {
@@ -254,18 +230,6 @@ export default function RunPage({ params }: RunPageProps) {
           <Link href="/test/new" className="p-2 text-text-secondary hover:text-text-primary hover:bg-bg-card border border-border-subtle rounded-xl transition" title="Back to Setup">
             <ArrowLeft size={16} />
           </Link>
-          <button
-            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-            className={`p-2 rounded-xl transition-all flex items-center gap-1.5 text-xs font-semibold cursor-pointer border ${
-              isSidebarOpen 
-                ? 'bg-accent-glow border-accent-primary text-accent-primary' 
-                : 'bg-bg-card hover:bg-border-subtle border-border-subtle text-text-secondary hover:text-text-primary'
-            }`}
-            title="Toggle runs history panel"
-          >
-            <History size={14} />
-            <span>History</span>
-          </button>
           <ThemeToggle />
           <div>
             <div className="flex items-center gap-2">
@@ -354,110 +318,7 @@ export default function RunPage({ params }: RunPageProps) {
       )}
 
       {/* Main Panel Container */}
-      <div className="flex-1 w-full max-w-7xl mx-auto px-6 py-8 flex flex-col md:flex-row gap-8 z-10 min-h-0">
-        {/* Collapsible Left Runs History Sidebar */}
-        {isSidebarOpen && (
-          <aside className="w-full md:w-72 bg-bg-card/45 border border-border-subtle rounded-2xl flex flex-col justify-between flex-shrink-0 overflow-hidden shadow-sm animate-in slide-in-from-left duration-200">
-            <div className="flex flex-col flex-1 min-h-0">
-              <div className="px-5 py-4 border-b border-border-subtle flex items-center justify-between bg-bg-card/20">
-                <div className="flex items-center gap-2 text-xs font-bold text-text-secondary uppercase tracking-wider">
-                  <History size={12} className="text-accent-primary" />
-                  <span>Runs History</span>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setIsSidebarOpen(false)}
-                  className="text-[10px] text-text-secondary hover:text-text-primary font-bold uppercase transition cursor-pointer"
-                >
-                  Hide
-                </button>
-              </div>
-
-              {/* History list */}
-              <div className="flex-1 overflow-y-auto divide-y divide-border-subtle/50 max-h-[300px] md:max-h-none">
-                {runs.length === 0 ? (
-                  <div className="px-5 py-8 text-center space-y-2">
-                    <Clock size={18} className="mx-auto text-text-secondary/50" />
-                    <p className="text-xs text-text-secondary">No test runs found.</p>
-                  </div>
-                ) : (
-                  paginatedRuns.map((r) => {
-                    const isCurrent = r.id === run.id;
-                    let statusColor = 'bg-blue-500';
-                    if (r.status === 'passed') statusColor = 'bg-emerald-500';
-                    else if (r.status === 'failed') statusColor = 'bg-red-500';
-                    else if (r.status === 'timed_out' || r.status === 'error') statusColor = 'bg-amber-500';
-
-                    return (
-                      <Link
-                        key={r.id}
-                        href={`/test/${r.id}`}
-                        className={`group px-5 py-3.5 block transition ${
-                          isCurrent 
-                            ? 'bg-bg-app border-l-2 border-accent-primary' 
-                            : 'hover:bg-bg-app/40 border-l-2 border-transparent'
-                        }`}
-                      >
-                        <div className="flex items-center justify-between">
-                          <span className="text-[9px] text-text-secondary/60 font-mono">#{r.id.slice(-6)}</span>
-                          {isCurrent && (
-                            <span className="text-[9px] font-bold text-accent-primary bg-accent-glow px-1.5 py-0.5 rounded">
-                              Active
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-xs font-bold text-text-primary mt-1 group-hover:text-accent-primary transition truncate">
-                          {r.task}
-                        </p>
-                        <p className="text-[10px] text-text-secondary truncate mt-0.5">
-                          {r.url}
-                        </p>
-                        <div className="flex items-center gap-2 mt-2">
-                          <span className={`w-1.5 h-1.5 rounded-full ${statusColor}`} />
-                          <span className="text-[9px] uppercase font-bold text-text-secondary">
-                            {r.status === 'created' ? 'queued' : r.status}
-                          </span>
-                          <span className="text-[9px] text-text-secondary/50 font-mono ml-auto">
-                            {new Date(r.createdAt).toLocaleDateString(undefined, {
-                              month: 'short',
-                              day: 'numeric',
-                            })}
-                          </span>
-                        </div>
-                      </Link>
-                    );
-                  })
-                )}
-              </div>
-            </div>
-
-            {/* Sidebar Pagination Footer */}
-            {totalPages > 1 && (
-              <div className="px-5 py-3 border-t border-border-subtle flex items-center justify-between bg-bg-card/20 select-none">
-                <button
-                  type="button"
-                  disabled={currentPage === 1}
-                  onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                  className="px-2.5 py-1.5 rounded-lg border border-border-subtle bg-bg-app text-text-secondary hover:text-text-primary disabled:opacity-40 disabled:hover:text-text-secondary transition text-[10px] font-bold uppercase active:scale-95 cursor-pointer disabled:active:scale-100 shadow-xs"
-                >
-                  Prev
-                </button>
-                <span className="text-[10px] font-semibold text-text-secondary font-mono">
-                  {currentPage} / {totalPages}
-                </span>
-                <button
-                  type="button"
-                  disabled={currentPage === totalPages}
-                  onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                  className="px-2.5 py-1.5 rounded-lg border border-border-subtle bg-bg-app text-text-secondary hover:text-text-primary disabled:opacity-40 disabled:hover:text-text-secondary transition text-[10px] font-bold uppercase active:scale-95 cursor-pointer disabled:active:scale-100 shadow-xs"
-                >
-                  Next
-                </button>
-              </div>
-            )}
-          </aside>
-        )}
-
+      <div className="flex-1 w-full max-w-7xl mx-auto px-6 py-8 z-10 min-h-0">
         {/* Main Grid content */}
         <main className="flex-1 grid lg:grid-cols-12 gap-8 min-w-0">
           

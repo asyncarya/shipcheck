@@ -4,8 +4,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import ThemeToggle from '@/components/ThemeToggle';
 import { createClient, hasSupabase } from '@/lib/supabase';
-import { 
-  ArrowRight, Shield, Play, Terminal, Cpu, CheckCircle2, 
+import {
+  ArrowRight, Shield, Play, Terminal, Cpu, CheckCircle2,
   XCircle, Monitor, Radio, Sparkles, AlertTriangle
 } from 'lucide-react';
 
@@ -170,7 +170,7 @@ export default function Home() {
     const timer = setInterval(() => {
       setCurrentStepIdx((prevIdx) => {
         const nextIdx = (prevIdx + 1) % 6; // 6 states: 5 steps + 1 report screen
-        
+
         // Reset state
         if (nextIdx === 0) {
           setStepStatuses(['running', 'pending', 'pending', 'pending', 'pending']);
@@ -182,7 +182,7 @@ export default function Home() {
         }
 
         const newStatuses = [...stepStatuses];
-        
+
         if (nextIdx < 5) {
           // Mark previous as passed
           newStatuses[prevIdx] = 'passed';
@@ -215,22 +215,22 @@ export default function Home() {
   }, [stepStatuses]);
 
   return (
-    <div 
+    <div
       onMouseMove={handleMouseMove}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       className="relative min-h-screen bg-bg-app text-text-primary flex flex-col items-center justify-between overflow-x-hidden selection:bg-accent-primary/10 selection:text-accent-primary font-sans transition-all duration-300"
     >
-      
+
       {/* Scroll Progress Bar Indicator */}
-      <div 
+      <div
         className="fixed top-0 left-0 h-[2px] bg-accent-primary z-50 transition-all duration-100"
         style={{ width: `${scrollProgress}%` }}
       />
-      
+
       {/* Dynamic Radial Spotlight */}
       {isHovered && (
-        <div 
+        <div
           className="absolute inset-0 pointer-events-none transition-opacity duration-300 ease-out z-0 hidden md:block"
           style={{
             background: `radial-gradient(550px circle at ${mouseCoords.x}px ${mouseCoords.y}px, rgba(217, 119, 6, 0.025), transparent 80%)`
@@ -256,8 +256,8 @@ export default function Home() {
         <div className="flex items-center gap-3">
           {!hasKeys ? (
             // Sandbox mode
-            <Link 
-              href="/test/new" 
+            <Link
+              href="/test/new"
               className="group flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-text-secondary hover:text-text-primary transition duration-200 border border-border-subtle bg-bg-card/50 px-3.5 py-1.5 rounded-lg active:scale-95 shadow-2xs"
             >
               <span>Dashboard</span>
@@ -279,8 +279,8 @@ export default function Home() {
               >
                 Sign Out
               </button>
-              <Link 
-                href="/test/new" 
+              <Link
+                href="/test/new"
                 className="group flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-text-secondary hover:text-text-primary transition duration-200 border border-border-subtle bg-bg-card/50 px-3.5 py-1.5 rounded-lg active:scale-95 shadow-2xs"
               >
                 <span>Dashboard</span>
@@ -289,8 +289,8 @@ export default function Home() {
             </>
           ) : (
             // Logged out
-            <Link 
-              href="/auth" 
+            <Link
+              href="/auth"
               className="group flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-text-secondary hover:text-text-primary transition duration-200 border border-border-subtle bg-bg-card/50 px-3.5 py-1.5 rounded-lg active:scale-95 shadow-2xs"
             >
               <span>Get started</span>
@@ -303,14 +303,14 @@ export default function Home() {
 
       {/* Hero Section */}
       <section className="w-full max-w-7xl mx-auto px-6 pt-20 pb-8 z-10 flex flex-col items-center">
-        
+
         {/* Centered Typography Details */}
         <div className="flex flex-col items-center text-center space-y-6 max-w-4xl mx-auto">
           <div className="inline-flex items-center gap-2 px-3 py-1 text-xs font-semibold rounded-full border border-border-subtle bg-bg-card text-accent-primary shadow-xs animate-fade-in-up animation-delay-100">
             <Sparkles size={11} className="text-accent-primary animate-pulse" />
             <span>Automated Web Verification</span>
           </div>
-          
+
           <h1 className="text-4xl sm:text-6xl font-bold tracking-tight leading-tight font-serif-anthropic text-text-primary text-center animate-fade-in-up animation-delay-200">
             Describe a user flow.<br />
             Get <span className="text-accent-primary font-serif-anthropic italic font-normal">complete browser tests</span> & bug reports.
@@ -356,7 +356,7 @@ export default function Home() {
 
         {/* Live Simulator Interface */}
         <div className="grid lg:grid-cols-12 gap-8 items-stretch">
-          
+
           {/* Left panel: Simulated Browser (7 cols) */}
           <div className="lg:col-span-7 flex flex-col bg-bg-card border border-border-subtle rounded-2xl overflow-hidden shadow-sm h-[530px]">
             {/* Browser Header */}
@@ -387,7 +387,7 @@ export default function Home() {
                     </span>
                     <span className="text-[9px] text-text-secondary font-mono ml-auto">Confidence: High</span>
                   </div>
-                  
+
                   <div className="space-y-1">
                     <h4 className="text-sm font-bold text-text-primary flex items-center gap-1.5">
                       <AlertTriangle size={14} className="text-red-500" />
@@ -413,36 +413,35 @@ export default function Home() {
                     <h3 className="text-sm font-bold font-serif-anthropic text-text-primary">Mock Target Website</h3>
                     <p className="text-[10px] text-text-secondary">Testing endpoint connection form</p>
                   </div>
-                  
+
                   <div className="space-y-3 text-left">
                     <div className="space-y-1">
                       <label className="text-[10px] font-bold uppercase tracking-wider text-text-secondary">Name</label>
-                      <input 
-                        type="text" 
-                        readOnly 
+                      <input
+                        type="text"
+                        readOnly
                         value={browserInputs.name}
-                        placeholder="Filling name field..." 
-                        className="w-full px-3 py-2 text-xs bg-bg-app border border-border-subtle rounded-lg text-text-primary font-mono focus:outline-none"
-                      />
-                    </div>
-                    
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-bold uppercase tracking-wider text-text-secondary">Email address</label>
-                      <input 
-                        type="text" 
-                        readOnly 
-                        value={browserInputs.email}
-                        placeholder="Filling email field..." 
+                        placeholder="Filling name field..."
                         className="w-full px-3 py-2 text-xs bg-bg-app border border-border-subtle rounded-lg text-text-primary font-mono focus:outline-none"
                       />
                     </div>
 
-                    <button 
-                      type="button" 
-                      disabled 
-                      className={`w-full py-2.5 text-xs font-bold text-white rounded-lg transition duration-200 ${
-                        isSubmitted ? 'bg-accent-primary/80 animate-pulse' : 'bg-accent-primary'
-                      }`}
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold uppercase tracking-wider text-text-secondary">Email address</label>
+                      <input
+                        type="text"
+                        readOnly
+                        value={browserInputs.email}
+                        placeholder="Filling email field..."
+                        className="w-full px-3 py-2 text-xs bg-bg-app border border-border-subtle rounded-lg text-text-primary font-mono focus:outline-none"
+                      />
+                    </div>
+
+                    <button
+                      type="button"
+                      disabled
+                      className={`w-full py-2.5 text-xs font-bold text-white rounded-lg transition duration-200 ${isSubmitted ? 'bg-accent-primary/80 animate-pulse' : 'bg-accent-primary'
+                        }`}
                     >
                       {isSubmitted ? 'Sending Request...' : 'Submit Message'}
                     </button>
@@ -454,15 +453,15 @@ export default function Home() {
 
           {/* Right panel: Active Step Tracker & Console Output (5 cols) */}
           <div className="lg:col-span-5 flex flex-col bg-bg-card border border-border-subtle rounded-2xl p-6 shadow-sm h-[530px] justify-between overflow-hidden">
-            
+
             {/* Step list Timeline */}
             <div className="flex-1 flex flex-col min-h-0 space-y-4">
               <h4 className="text-xs font-bold text-text-secondary uppercase tracking-wider">Simulated Timeline</h4>
-              
+
               <div ref={stepsContainerRef} className="flex-1 overflow-y-auto space-y-2">
                 {SIMULATOR_STEPS.map((step, idx) => {
                   const status = stepStatuses[idx];
-                  
+
                   let borderClass = 'border-border-subtle bg-bg-card';
                   let icon = <span className="w-1.5 h-1.5 rounded-full bg-text-secondary/50" />;
                   let textClass = 'text-text-secondary/60';
@@ -492,7 +491,7 @@ export default function Home() {
                           </span>
                         </div>
                       </div>
-                      
+
                       {status === 'passed' && <span className="text-[9px] text-text-secondary font-mono">0.4s</span>}
                     </div>
                   );
@@ -541,7 +540,7 @@ export default function Home() {
               <span className="col-span-4">Capability</span>
               <span className="col-span-8">Description</span>
             </div>
-            
+
             <div className={`grid grid-cols-12 border-b border-border-subtle/60 p-4 text-text-secondary transition-all duration-700 delay-100 transform ${specsVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
               <span className="col-span-4 font-bold text-text-primary">Browser Isolation</span>
               <span className="col-span-8">Isolated server-side Chromium instances running headless Playwright protocols.</span>
@@ -600,7 +599,7 @@ export default function Home() {
         <div className="bg-bg-card border border-border-subtle rounded-3xl p-12 text-center space-y-6 relative overflow-hidden shadow-xs group hover:border-accent-primary/20 transition-all duration-300">
           <div className="absolute top-0 right-0 -translate-y-12 translate-x-12 w-64 h-64 rounded-full bg-accent-primary/5 blur-3xl pointer-events-none group-hover:scale-110 transition-transform duration-700" />
           <div className="absolute bottom-0 left-0 translate-y-12 -translate-x-12 w-64 h-64 rounded-full bg-accent-primary/5 blur-3xl pointer-events-none group-hover:scale-110 transition-transform duration-700" />
-          
+
           <h2 className="text-3xl font-bold font-serif-anthropic text-text-primary">Ready to verify your web forms?</h2>
           <p className="text-xs text-text-secondary max-w-md mx-auto leading-relaxed">
             Create custom plans for your public demo sites, execute live automated flows, and inspect generated bug reports.
@@ -631,7 +630,7 @@ export default function Home() {
                 AI-powered web verification engine translating natural language test intents to structured Playwright scenarios.
               </p>
             </div>
-            
+
             <div className="space-y-2">
               <h4 className="text-[10px] uppercase font-bold tracking-wider text-text-secondary">Navigation</h4>
               <ul className="space-y-1.5 text-xs text-text-secondary">
@@ -640,7 +639,7 @@ export default function Home() {
                 <li><Link href="/auth" className="hover:text-text-primary transition-colors link-underline">Developer Portal</Link></li>
               </ul>
             </div>
-            
+
             <div className="space-y-2">
               <h4 className="text-[10px] uppercase font-bold tracking-wider text-text-secondary">Architecture</h4>
               <p className="text-[11px] text-text-secondary leading-relaxed">
@@ -654,7 +653,7 @@ export default function Home() {
             <h1 className="text-[14vw] font-black tracking-tighter leading-none text-center select-none uppercase font-sans cursor-default stroke-text">
               ShipCheck
             </h1>
-            
+
             <p className="text-[10px] uppercase font-bold tracking-wider text-text-secondary/50 mt-6 text-center" suppressHydrationWarning>
               &copy; {new Date().getFullYear()} ShipCheck. Built for the AI Hackathon.
             </p>
