@@ -17,8 +17,7 @@ import {
   Clock, 
   AlertCircle, 
   Loader2,
-  ExternalLink,
-  Plus
+  ExternalLink
 } from 'lucide-react';
 
 interface WorkspaceDashboardProps {
@@ -36,6 +35,7 @@ export default function WorkspaceDashboard({
   const [runs, setRuns] = useState<TestRun[]>(initialRuns);
   const [loading, setLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
   const ITEMS_PER_PAGE = 5;
 
   const totalPages = Math.max(1, Math.ceil(runs.length / ITEMS_PER_PAGE));
@@ -52,7 +52,7 @@ export default function WorkspaceDashboard({
   };
 
   return (
-    <div className="min-h-screen bg-bg-app text-text-primary flex flex-col md:flex-row overflow-x-hidden selection:bg-accent-primary/10 selection:text-accent-primary">
+    <div className="h-screen overflow-hidden bg-bg-app text-text-primary flex flex-col md:flex-row selection:bg-accent-primary/10 selection:text-accent-primary">
       {/* Sidebar Panel */}
       <aside className="w-full md:w-80 bg-bg-card/45 border-b md:border-b-0 md:border-r border-border-subtle flex flex-col justify-between flex-shrink-0 z-10">
         
@@ -62,19 +62,9 @@ export default function WorkspaceDashboard({
           {/* Logo Brand Header */}
           <div className="px-6 py-5.5 border-b border-border-subtle flex items-center justify-between">
             <Link href="/" className="flex items-center gap-2">
-              <span className="w-8 h-8 rounded-lg bg-accent-primary flex items-center justify-center font-bold text-white shadow-sm">SC</span>
+              <img src="/logo.png" alt="ShipCheck Logo" className="w-8 h-8 rounded-lg object-cover bg-accent-glow border border-border-subtle" />
               <span className="font-bold text-base tracking-tight font-serif-anthropic text-text-primary">ShipCheck</span>
             </Link>
-            <div className="flex items-center gap-1.5">
-              <ThemeToggle />
-              <Link 
-                href="/test/new" 
-                className="p-2 rounded-xl bg-bg-card hover:bg-border-subtle border border-border-subtle text-accent-primary transition active:scale-95 cursor-pointer flex items-center justify-center shadow-sm"
-                title="New Test"
-              >
-                <Plus size={14} />
-              </Link>
-            </div>
           </div>
 
           {/* Test Runs History title */}
@@ -171,43 +161,62 @@ export default function WorkspaceDashboard({
           )}
         </div>
 
-        {/* User Account/Sign Out panel */}
-        {hasSupabaseKey && (
-          <div className="p-4 border-t border-border-subtle bg-bg-card/30 space-y-3.5">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-full bg-bg-app flex items-center justify-center text-text-secondary border border-border-subtle">
-                <User size={16} />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-xs font-bold text-text-primary truncate">
-                  {userEmail || 'Active User'}
-                </p>
-                <p className="text-[10px] text-text-secondary truncate">
-                  Authenticated Workspace
-                </p>
-              </div>
-            </div>
-            
-            <button
-              onClick={handleSignOut}
-              disabled={loading}
-              className="w-full flex items-center justify-center gap-1.5 py-2.5 px-3 border border-border-subtle hover:border-red-950/30 text-text-secondary hover:text-red-500 hover:bg-red-500/5 rounded-xl text-xs font-semibold active:scale-95 transition cursor-pointer disabled:opacity-40"
-            >
-              {loading ? (
-                <Loader2 size={12} className="animate-spin text-text-secondary" />
-              ) : (
-                <>
-                  <LogOut size={12} />
-                  <span>Log out</span>
-                </>
-              )}
-            </button>
-          </div>
-        )}
       </aside>
 
       {/* Main Workspace Frame */}
-      <main className="flex-1 flex flex-col justify-between relative overflow-y-auto">
+      <main className="flex-1 flex flex-col justify-between relative overflow-hidden">
+        
+        {/* Top-Right Header Actions (ThemeToggle after Profile) */}
+        <div className="absolute top-6 right-6 z-30 flex items-center gap-3">
+          {hasSupabaseKey && (
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setShowProfileMenu(!showProfileMenu)}
+                className="w-10 h-10 rounded-full bg-bg-card hover:bg-border-subtle border border-border-subtle flex items-center justify-center text-accent-primary hover:text-accent-primary/80 transition shadow-sm cursor-pointer active:scale-95"
+                title="Profile Settings"
+              >
+                <User size={18} />
+              </button>
+
+              {/* Profile Dropdown Menu */}
+              {showProfileMenu && (
+                <div className="absolute right-0 mt-2 w-64 bg-bg-card border border-border-subtle rounded-2xl p-4 shadow-md space-y-3.5 z-50 animate-fade-in-up">
+                  <div className="flex items-center gap-3 border-b border-border-subtle pb-3">
+                    <div className="w-8 h-8 rounded-full bg-bg-app flex items-center justify-center text-text-secondary border border-border-subtle">
+                      <User size={14} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-bold text-text-primary truncate">
+                        {userEmail || 'Active User'}
+                      </p>
+                      <p className="text-[10px] text-text-secondary truncate">
+                        Authenticated Workspace
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <button
+                    onClick={handleSignOut}
+                    disabled={loading}
+                    className="w-full flex items-center justify-center gap-1.5 py-2 px-3 border border-border-subtle hover:border-red-950/30 text-text-secondary hover:text-red-500 hover:bg-red-500/5 rounded-xl text-xs font-semibold active:scale-95 transition cursor-pointer disabled:opacity-40"
+                  >
+                    {loading ? (
+                      <Loader2 size={12} className="animate-spin text-text-secondary" />
+                    ) : (
+                      <>
+                        <LogOut size={12} />
+                        <span>Log out</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+          <ThemeToggle />
+        </div>
+
         <div className="w-full max-w-3xl mx-auto px-6 py-12 md:py-20 z-10 space-y-8">
           <div className="space-y-3.5 text-center sm:text-left">
             <h1 className="text-3xl font-bold font-serif-anthropic tracking-tight sm:text-4xl text-text-primary">

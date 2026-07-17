@@ -23,7 +23,7 @@ export async function POST(request: Request) {
     }
 
     // Lookup plan
-    const plan = runStore.getPlan(planId);
+    const plan = await runStore.getPlan(planId);
     if (!plan) {
       return NextResponse.json(
         { error: { code: 'PLAN_NOT_FOUND', message: 'The specified plan was not found or has expired.' } },

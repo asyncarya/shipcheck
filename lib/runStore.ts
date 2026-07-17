@@ -1,5 +1,34 @@
 import { TestRun, StepResult, Evidence, ConsoleError } from './schemas';
-import { createAdminClient } from './supabaseServer';
+import { createAdminClient, createServer } from './supabaseServer';
+import { createClient as createSupabaseJSClient } from '@supabase/supabase-js';
+import { supabaseUrl, supabaseAnonKey } from './supabase';
+
+function createPublicClient() {
+  if (!supabaseUrl || !supabaseAnonKey) return null;
+  return createSupabaseJSClient(supabaseUrl, supabaseAnonKey, {
+    auth: {
+      persistSession: false,
+      autoRefreshToken: false,
+    },
+  });
+}
+
+async function getSupabaseClient() {
+  // 1. Try admin client (service role)
+  const admin = createAdminClient();
+  if (admin) return admin;
+
+  // 2. Try server client with user session (cookies)
+  try {
+    const server = await createServer();
+    if (server) return server;
+  } catch (e) {
+    // cookies() failed or not in request context
+  }
+
+  // 3. Fallback to public client (anon key, no cookies)
+  return createPublicClient();
+}
 
 // Prevent hot-reloading from clearing our in-memory store in development
 const globalForRuns = global as unknown as { runsMap?: Map<string, TestRun>; plansMap?: Map<string, any> };
@@ -58,8 +87,24 @@ export const runStore = {
     globalPlans.set(id, plan);
   },
 
-  getPlan(id: string): any | null {
-    return globalPlans.get(id) || null;
+  async getPlan(id: string): Promise<any | null> {
+    const cached = globalPlans.get(id);
+    if (cached) return cached;
+
+    const client = await getSupabaseClient();
+    if (client) {
+      try {
+        const { data, error } = await client.from('runs').select('plan').eq('plan_id', id).limit(1);
+        if (!error && data && data.length > 0 && data[0].plan) {
+          const plan = data[0].plan;
+          globalPlans.set(id, plan);
+          return plan;
+        }
+      } catch (err) {
+        console.error('[runStore] Failed to fetch fallback plan from Supabase:', err);
+      }
+    }
+    return null;
   },
 
   async createRun(id: string, url: string, task: string, expectedResult?: string, userId?: string): Promise<TestRun> {
@@ -77,14 +122,14 @@ export const runStore = {
     };
     globalRuns.set(id, run);
 
-    const admin = createAdminClient();
-    if (admin) {
+    const client = await getSupabaseClient();
+    if (client) {
       try {
         const dbRow = mapSchemaToDb(run);
         if (userId) {
           dbRow.user_id = userId;
         }
-        const { error } = await admin.from('runs').insert(dbRow);
+        const { error } = await client.from('runs').insert(dbRow);
         if (error) {
           console.error('[runStore] Error creating run in Supabase:', error);
         }
@@ -97,10 +142,10 @@ export const runStore = {
   },
 
   async getRun(id: string): Promise<TestRun | null> {
-    const admin = createAdminClient();
-    if (admin) {
+    const client = await getSupabaseClient();
+    if (client) {
       try {
-        const { data, error } = await admin.from('runs').select('*').eq('id', id).single();
+        const { data, error } = await client.from('runs').select('*').eq('id', id).single();
         if (error) {
           // Fallback to local map if it exists
           return globalRuns.get(id) || null;
@@ -125,11 +170,11 @@ export const runStore = {
     const updated = { ...run, ...patch } as TestRun;
     globalRuns.set(id, updated);
 
-    const admin = createAdminClient();
-    if (admin) {
+    const client = await getSupabaseClient();
+    if (client) {
       try {
         const dbPatch = mapSchemaToDb(patch);
-        const { error } = await admin.from('runs').update(dbPatch).eq('id', id);
+        const { error } = await client.from('runs').update(dbPatch).eq('id', id);
         if (error) {
           console.error('[runStore] Supabase update error:', error);
         }
@@ -173,12 +218,12 @@ export const runStore = {
   },
 
   async getAllRuns(userId?: string): Promise<TestRun[]> {
-    const admin = createAdminClient();
-    if (admin) {
+    const client = await getSupabaseClient();
+    if (client) {
       try {
-        let query = admin.from('runs').select('*').order('created_at', { ascending: false });
+        let query = client.from('runs').select('*').order('created_at', { ascending: false });
         if (userId) {
-          query = query.eq('user_id', userId);
+          query = query.or(`user_id.eq.${userId},user_id.is.null`);
         }
         const { data, error } = await query;
         if (error) {
