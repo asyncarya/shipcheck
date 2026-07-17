@@ -1,5 +1,38 @@
 import { openai } from './openai';
 import { BugReport, BugReportSchema, TestRun } from './schemas';
+import fs from 'fs';
+import path from 'path';
+
+async function getScreenshotMessageContent(screenshotPath: string): Promise<any | null> {
+  if (!screenshotPath) return null;
+
+  if (screenshotPath.startsWith('http')) {
+    return {
+      type: 'image_url',
+      image_url: {
+        url: screenshotPath,
+      },
+    };
+  }
+
+  try {
+    const absolutePath = path.join(process.cwd(), 'public', screenshotPath);
+    if (fs.existsSync(absolutePath)) {
+      const imageBuffer = fs.readFileSync(absolutePath);
+      const base64Image = imageBuffer.toString('base64');
+      const ext = path.extname(absolutePath).replace('.', '') || 'jpeg';
+      return {
+        type: 'image_url',
+        image_url: {
+          url: `data:image/${ext};base64,${base64Image}`,
+        },
+      };
+    }
+  } catch (err) {
+    console.error('[Analyzer] Failed to read local screenshot file for AI analysis:', err);
+  }
+  return null;
+}
 
 export async function analyzeTestRun(run: TestRun): Promise<BugReport> {
   const normalizedUrl = run.url.toLowerCase();
@@ -70,7 +103,23 @@ RULES:
   * "critical": App crashes completely, security issues, or major loops.
   * "high": Primary user flow (like form submission, login, checkout) fails completely.
   * "medium": Secondary flow broken, confusing but recoverable validation errors.
-  * "low": Visual bugs, minor typos, non-blocking cosmetic issues.`;
+  * "low": Visual bugs, minor typos, non-blocking cosmetic issues.
+
+IMPORTANT: Your JSON response must match this exact TypeScript interface:
+interface BugReport {
+  status: 'passed' | 'failed';
+  title: string; // Short, descriptive title of the bug or test status
+  severity: 'critical' | 'high' | 'medium' | 'low';
+  failedStep: string | null; // The exact description of the step that failed, if any
+  expectedBehavior: string; // What should have occurred in the happy path
+  actualBehavior: string; // What actually occurred based on the evidence
+  reproductionSteps: string[]; // Step-by-step instructions to reproduce the issue
+  observedErrors: string[]; // List of console errors, server responses, or network failures observed
+  possibleCause: string; // Hypothesized technical cause of the failure
+  suggestedFix: string; // Actionable developer recommendation to resolve the issue
+  confidence: 'high' | 'medium' | 'low';
+  warnings: string[]; // Caveats, limitations of evidence, or assumptions made
+}`;
 
   // Compile runner details
   const stepOutline = run.steps.map(s => {
@@ -95,12 +144,31 @@ ${errorsOutline || 'No console errors logged.'}
 PAGE TEXT EXTRACTED ON FAILURE:
 ${textEvidence || 'No page text extracted.'}`;
 
+  // Gather the screenshot associated with the failed step to run visual QA inspections
+  let failedScreenshotContent: any = null;
+  const failedStepResult = run.steps.find(s => s.status === 'failed');
+  if (failedStepResult && failedStepResult.screenshotPath) {
+    failedScreenshotContent = await getScreenshotMessageContent(failedStepResult.screenshotPath);
+  }
+
+  const userMessageContent: any[] = [
+    {
+      type: 'text',
+      text: userPrompt,
+    }
+  ];
+
+  if (failedScreenshotContent) {
+    console.log(`[Analyzer] Attaching failure screenshot context (${failedStepResult?.screenshotPath}) for visual inspection.`);
+    userMessageContent.push(failedScreenshotContent);
+  }
+
   try {
     const completion = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
       messages: [
         { role: 'system', content: systemPrompt + '\nIMPORTANT: You must return valid raw JSON that conforms to the BugReport schema.' },
-        { role: 'user', content: userPrompt },
+        { role: 'user', content: userMessageContent },
       ],
       response_format: { type: 'json_object' },
     });
