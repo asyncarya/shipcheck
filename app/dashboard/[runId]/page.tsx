@@ -156,7 +156,7 @@ export default function RunPage({ params }: RunPageProps) {
       if (!res.ok) {
         throw new Error(data.error?.message || 'Failed to re-run test.');
       }
-      router.push(`/test/${data.run.id}`);
+      router.push(`/dashboard/${data.run.id}`);
     } catch (e: any) {
       setError(e.message || 'Error launching test retry.');
       setLoading(false);
@@ -184,7 +184,7 @@ export default function RunPage({ params }: RunPageProps) {
             </p>
           </div>
           <Link
-            href="/test/new"
+            href="/dashboard"
             className="inline-flex items-center gap-1.5 px-6 py-3 font-semibold text-white bg-accent-primary hover:bg-accent-primary/80 rounded-xl transition cursor-pointer shadow-sm"
           >
             <span>Launch new test</span>
@@ -227,7 +227,7 @@ export default function RunPage({ params }: RunPageProps) {
       {/* Header */}
       <header className="w-full max-w-7xl mx-auto px-6 py-5 border-b border-border-subtle flex flex-col sm:flex-row sm:items-center justify-between gap-4 z-10">
         <div className="flex items-center gap-3">
-          <Link href="/test/new" className="p-2 text-text-secondary hover:text-text-primary hover:bg-bg-card border border-border-subtle rounded-xl transition" title="Back to Setup">
+          <Link href="/dashboard" className="p-2 text-text-secondary hover:text-text-primary hover:bg-bg-card border border-border-subtle rounded-xl transition" title="Back to Setup">
             <ArrowLeft size={16} />
           </Link>
           <ThemeToggle />

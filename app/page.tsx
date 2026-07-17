@@ -257,7 +257,7 @@ export default function Home() {
           {!hasKeys ? (
             // Sandbox mode
             <Link
-              href="/test/new"
+              href="/dashboard"
               className="group flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-text-secondary hover:text-text-primary transition duration-200 border border-border-subtle bg-bg-card/50 px-3.5 py-1.5 rounded-lg active:scale-95 shadow-2xs"
             >
               <span>Dashboard</span>
@@ -280,7 +280,7 @@ export default function Home() {
                 Sign Out
               </button>
               <Link
-                href="/test/new"
+                href="/dashboard"
                 className="group flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-text-secondary hover:text-text-primary transition duration-200 border border-border-subtle bg-bg-card/50 px-3.5 py-1.5 rounded-lg active:scale-95 shadow-2xs"
               >
                 <span>Dashboard</span>
@@ -322,7 +322,7 @@ export default function Home() {
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-2 animate-fade-in-up animation-delay-400">
             <Link
-              href={hasKeys && !user ? "/auth" : "/test/new"}
+              href={hasKeys && !user ? "/auth" : "/dashboard"}
               className="group w-full sm:w-auto flex items-center justify-center gap-2.5 px-9 py-4 font-bold text-white bg-accent-primary hover:bg-accent-primary/95 active:scale-95 rounded-xl shadow-xs transition duration-200 cursor-pointer"
             >
               <span>Launch Playground</span>
@@ -606,7 +606,7 @@ export default function Home() {
           </p>
           <div className="pt-2">
             <Link
-              href={hasKeys && !user ? "/auth" : "/test/new"}
+              href={hasKeys && !user ? "/auth" : "/dashboard"}
               className="inline-flex items-center gap-2 px-9 py-4 font-bold text-white bg-accent-primary hover:bg-accent-primary/95 active:scale-95 rounded-xl shadow-xs transition duration-200 cursor-pointer group/btn"
             >
               <span>Get started free</span>
@@ -634,7 +634,7 @@ export default function Home() {
             <div className="space-y-2">
               <h4 className="text-[10px] uppercase font-bold tracking-wider text-text-secondary">Navigation</h4>
               <ul className="space-y-1.5 text-xs text-text-secondary">
-                <li><Link href="/test/new" className="hover:text-text-primary transition-colors link-underline">Test Playground</Link></li>
+                <li><Link href="/dashboard" className="hover:text-text-primary transition-colors link-underline">Test Playground</Link></li>
                 <li><a href="#simulator" className="hover:text-text-primary transition-colors link-underline">QA Simulator</a></li>
                 <li><Link href="/auth" className="hover:text-text-primary transition-colors link-underline">Developer Portal</Link></li>
               </ul>

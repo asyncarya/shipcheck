@@ -27,7 +27,7 @@ export default function AuthPage() {
     if (!hasSupabase()) {
       setConfigured(false);
       const timer = setTimeout(() => {
-        router.push('/test/new');
+        router.push('/dashboard');
       }, 3000);
       return () => clearTimeout(timer);
     }
@@ -78,7 +78,7 @@ export default function AuthPage() {
         });
         if (updateErr) throw updateErr;
         setSuccess('Password updated successfully! Redirecting...');
-        setTimeout(() => router.push('/test/new'), 1200);
+        setTimeout(() => router.push('/dashboard'), 1200);
       } else if (isForgotPassword) {
         // Request forgot password email link
         const { error: resetErr } = await client.auth.resetPasswordForEmail(email, {
@@ -92,8 +92,19 @@ export default function AuthPage() {
           password,
         });
         if (loginErr) throw loginErr;
+
+        // Clean up old oversized avatar metadata from database before cookie redirect
+        const { data: { user } } = await client.auth.getUser();
+        if (user && user.user_metadata?.avatar_url && user.user_metadata.avatar_url.length > 10000) {
+          await client.auth.updateUser({
+            data: {
+              avatar_url: ''
+            }
+          });
+        }
+
         setSuccess('Success! Redirecting...');
-        setTimeout(() => router.push('/test/new'), 800);
+        setTimeout(() => router.push('/dashboard'), 800);
       } else {
         const { error: signUpErr, data } = await client.auth.signUp({
           email,
@@ -109,7 +120,7 @@ export default function AuthPage() {
         
         if (data.session) {
           setSuccess('Account created successfully! Redirecting...');
-          setTimeout(() => router.push('/test/new'), 1000);
+          setTimeout(() => router.push('/dashboard'), 1000);
         } else {
           setSuccess('Registration successful! Please check your inbox for the confirmation link.');
           setEmail('');

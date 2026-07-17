@@ -32,6 +32,7 @@ export default async function NewTestPage() {
       initialRuns={runs} 
       userEmail={userEmail} 
       hasSupabaseKey={hasSupabaseKey} 
+      userId={userId}
     />
   );
 }

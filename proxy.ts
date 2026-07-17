@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
@@ -39,8 +39,9 @@ export async function middleware(request: NextRequest) {
 
   const { data: { user } } = await supabase.auth.getUser();
 
+  const isHomePage = request.nextUrl.pathname === '/';
   const isAuthPage = request.nextUrl.pathname.startsWith('/auth');
-  const isProtectedPage = request.nextUrl.pathname.startsWith('/test');
+  const isProtectedPage = request.nextUrl.pathname.startsWith('/dashboard');
 
   if (isProtectedPage && !user) {
     const redirectUrl = request.nextUrl.clone();
@@ -48,9 +49,9 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(redirectUrl);
   }
 
-  if (isAuthPage && user) {
+  if ((isAuthPage || isHomePage) && user) {
     const redirectUrl = request.nextUrl.clone();
-    redirectUrl.pathname = '/test/new';
+    redirectUrl.pathname = '/dashboard';
     return NextResponse.redirect(redirectUrl);
   }
 
@@ -59,7 +60,8 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    '/test/:path*',
+    '/dashboard/:path*',
     '/auth',
+    '/',
   ],
 };
