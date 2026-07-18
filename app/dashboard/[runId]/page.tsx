@@ -9,6 +9,7 @@ import ConsoleErrors from '@/components/ConsoleErrors';
 import BugReport from '@/components/BugReport';
 import SeverityBadge from '@/components/SeverityBadge';
 import ThemeToggle from '@/components/ThemeToggle';
+import ConsoleAnalysisView from '@/components/ConsoleAnalysisView';
 import { ArrowLeft, RefreshCw, Play, AlertCircle, Loader2, Sparkles, CheckCircle2, Clock } from 'lucide-react';
 import { TestRun, BugReport as BugReportType } from '@/lib/schemas';
 
@@ -29,7 +30,7 @@ export default function RunPage({ params }: RunPageProps) {
   const [bugReport, setBugReport] = useState<BugReportType | null>(null);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [modalTab, setModalTab] = useState<'steps' | 'analysis'>('steps');
+  const [modalTab, setModalTab] = useState<'steps' | 'analysis' | 'console'>('steps');
   const [hasOpenedModal, setHasOpenedModal] = useState(false);
 
   const triggerAnalysis = async () => {
@@ -466,11 +467,22 @@ export default function RunPage({ params }: RunPageProps) {
               >
                 AI Bug Analysis
               </button>
+              <button
+                type="button"
+                onClick={() => setModalTab('console')}
+                className={`px-4.5 py-2.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+                  modalTab === 'console'
+                    ? 'bg-bg-card text-accent-primary border border-border-subtle shadow-sm'
+                    : 'text-text-secondary hover:text-text-primary'
+                }`}
+              >
+                Console Diagnostics
+              </button>
             </div>
             
             {/* Modal Content body */}
             <div className="flex-1 overflow-y-auto p-6 space-y-6">
-              {modalTab === 'steps' ? (
+              {modalTab === 'steps' && (
                 <div className="space-y-4">
                   <p className="text-xs text-text-secondary leading-relaxed">
                     Click any completed step in the timeline to view its screen capture in the main dashboard background.
@@ -485,8 +497,9 @@ export default function RunPage({ params }: RunPageProps) {
                     }}
                   />
                 </div>
-              ) : (
-                /* Bug Report tab */
+              )}
+
+              {modalTab === 'analysis' && (
                 <div className="space-y-4">
                   {analyzing ? (
                     <div className="p-12 text-center space-y-4 flex flex-col items-center justify-center">
@@ -515,6 +528,15 @@ export default function RunPage({ params }: RunPageProps) {
                       </button>
                     </div>
                   )}
+                </div>
+              )}
+
+              {modalTab === 'console' && (
+                <div className="space-y-4">
+                  <ConsoleAnalysisView 
+                    analysis={bugReport?.consoleAnalysis}
+                    consoleErrors={run.consoleErrors}
+                  />
                 </div>
               )}
             </div>

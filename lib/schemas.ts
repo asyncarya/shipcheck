@@ -65,6 +65,7 @@ export const BugReportSchema = z.object({
   suggestedFix: z.string().describe('Actionable developer recommendation to resolve the issue'),
   confidence: z.enum(['high', 'medium', 'low']).describe('Analyzer confidence in the diagnosis'),
   warnings: z.array(z.string()).describe('Caveats, limitations of evidence, or assumptions made'),
+  consoleAnalysis: z.string().optional(),
 });
 export type BugReport = z.infer<typeof BugReportSchema>;
 

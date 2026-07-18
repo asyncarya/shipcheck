@@ -34,6 +34,66 @@ async function getScreenshotMessageContent(screenshotPath: string): Promise<any 
   return null;
 }
 
+export async function analyzeConsoleErrors(run: TestRun): Promise<string> {
+  const errorsOutline = run.consoleErrors
+    .map(e => `[${e.type.toUpperCase()}] ${e.text} (${e.timestamp})`)
+    .join('\n');
+  
+  if (!errorsOutline) {
+    return `### Console & Network Diagnostics
+No console warnings, javascript errors, or network resource failures were detected during the test execution. The browser environment was completely clean.`;
+  }
+
+  const systemPrompt = `You are a professional browser console and network diagnostics analyst for ShipCheck.
+Your job is to read a dump of console outputs, page errors, and network request failures from a Playwright test run, and produce a beautiful, structured analysis report in Markdown format.
+
+Focus on:
+1. Identifying critical JavaScript exceptions, syntax errors, or page crashes.
+2. Explaining network asset load failures (e.g., resources blocked by CSP, script network timeouts, or 500 internal server responses).
+3. Linking these errors directly to the original user task (explain if the console/network errors are the reason the test failed or if they are harmless third-party resource warnings).
+4. Providing a clear, developer-friendly fix recommendations checklist.
+
+Use clean, elegant Markdown headers, bullets, and code snippets. Keep your analysis concise and highly professional.`;
+
+  const userPrompt = `Target Website URL: ${run.url}
+User Task: "${run.task}"
+Test Outcome: ${run.status}
+
+CONSOLE & NETWORK ERROR LOG DUMP:
+${errorsOutline}`;
+
+  const hasApiKey = process.env.OPENAI_API_KEY && 
+                    process.env.OPENAI_API_KEY !== 'your_api_key_here' && 
+                    process.env.OPENAI_API_KEY !== 'placeholder-api-key';
+
+  if (!hasApiKey) {
+    return `### Console & Network Diagnostics
+Observed ${run.consoleErrors.length} console/network entries:
+${run.consoleErrors.map(e => `- **[${e.type.toUpperCase()}]** ${e.text}`).join('\n')}
+
+*(AI-powered diagnostic analysis is currently inactive due to missing OpenAI API key configuration.)*`;
+  }
+
+  try {
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt }
+      ]
+    });
+
+    return completion.choices[0].message.content || 'Failed to generate console analysis details.';
+  } catch (error: any) {
+    console.error('Error in analyzeConsoleErrors:', error);
+    return `### Console & Network Diagnostics
+Error compiling AI analysis: ${error.message || error}
+
+#### Raw Logs:
+${run.consoleErrors.map(e => `- **[${e.type.toUpperCase()}]** ${e.text}`).join('\n')}`;
+  }
+}
+
 export async function analyzeTestRun(run: TestRun): Promise<BugReport> {
   const normalizedUrl = run.url.toLowerCase();
   
@@ -46,6 +106,7 @@ export async function analyzeTestRun(run: TestRun): Promise<BugReport> {
 
   // If the run passed, return a standard passed bug report
   if (!hasFailedSteps && run.status === 'passed') {
+    const consoleAnalysis = await analyzeConsoleErrors(run);
     return {
       status: 'passed',
       title: 'Test executed and passed successfully',
@@ -59,12 +120,14 @@ export async function analyzeTestRun(run: TestRun): Promise<BugReport> {
       suggestedFix: 'None required.',
       confidence: 'high',
       warnings: [],
+      consoleAnalysis,
     };
   }
 
   // Deterministic bug report for the demo site or fallback when API key is missing
   if (isDemoSite || !hasApiKey) {
     const consoleLogs = run.consoleErrors.map(e => `[${e.type.toUpperCase()}] ${e.text}`);
+    const consoleAnalysis = await analyzeConsoleErrors(run);
     
     return {
       status: 'failed',
@@ -87,7 +150,8 @@ export async function analyzeTestRun(run: TestRun): Promise<BugReport> {
       possibleCause: 'The server endpoint `/api/demo-contact` is throwing an unhandled exception or returning a 500 Internal Server Error status, causing the client form action to fail.',
       suggestedFix: 'Review the `/api/demo-contact` server route logic. Fix the root database/API exception. Add a client-side try/catch to gracefully display an error notification instead of failing silently.',
       confidence: 'high',
-      warnings: ['This is a deterministic bug report designed for the local demo contact flow.']
+      warnings: ['This is a deterministic bug report designed for the local demo contact flow.'],
+      consoleAnalysis,
     };
   }
 
@@ -180,10 +244,14 @@ ${textEvidence || 'No page text extracted.'}`;
 
     const parsed = JSON.parse(responseContent);
     const report = BugReportSchema.parse(parsed);
+    
+    const consoleAnalysis = await analyzeConsoleErrors(run);
+    report.consoleAnalysis = consoleAnalysis;
 
     return report;
   } catch (error: any) {
     console.error('Error in analyzeTestRun:', error);
+    const consoleAnalysis = await analyzeConsoleErrors(run);
     // Fallback report
     return {
       status: 'failed',
@@ -198,6 +266,7 @@ ${textEvidence || 'No page text extracted.'}`;
       suggestedFix: 'Verify process.env.OPENAI_API_KEY is active and correct.',
       confidence: 'low',
       warnings: ['This report was auto-generated as a fallback because the AI analyzer service failed.'],
+      consoleAnalysis,
     };
   }
 }
