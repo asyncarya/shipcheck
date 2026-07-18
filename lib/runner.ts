@@ -1,6 +1,7 @@
 import { chromium, Browser, BrowserContext, Page } from 'playwright';
 import { runStore } from './runStore';
 import { TestPlan, TestStep, StepResult, Evidence } from './schemas';
+import { openai } from './openai';
 import path from 'path';
 import fs from 'fs';
 import { createClient } from '@supabase/supabase-js';
@@ -430,6 +431,163 @@ async function captureLivePreview(page: Page | null, runId: string): Promise<voi
   }
 }
 
+interface VisionStepDecision {
+  action: 'navigate' | 'click' | 'fill' | 'verify' | 'complete' | 'fail';
+  target?: string;
+  field?: string;
+  value?: string;
+  description: string;
+  explanation: string;
+}
+
+const VISION_SYSTEM_PROMPT = `You are an autonomous visual QA test execution agent for ShipCheck.
+Your job is to inspect a website screenshot, current URL, and visible elements layout summary, and decide the NEXT SINGLE LOGICAL ACTION to achieve the user's objective.
+
+Supported actions:
+1. "navigate": Open a URL path or full URL. Set "target" to the URL path or full URL.
+2. "click": Click a button, link, or tab. Set "target" to the text or selector of the element.
+3. "fill": Enter text into an input field. Set "field" to the field's label or placeholder, and "value" to the text to insert.
+4. "verify": Verify that text or a success state is visible on screen. Set "target" to the text/message you are verifying.
+5. "complete": Select this when the user's objective is fully accomplished (e.g. success message verified, dashboard loaded).
+6. "fail": Select this if the page shows a clear validation error, authentication block, or if the task is blocked/impossible.
+
+RULES:
+- Perform ONLY ONE action per step.
+- Do not repeat actions that already occurred and had no effect.
+- Focus on visible, interactive elements on screen.
+- Skip third-party/SSO provider buttons to avoid external redirects.
+- Never enter real credentials, passwords, or credit card numbers. Use mock details.
+- Provide a clear, short description of the action and an explanation of your visual reasoning based on the screenshot.
+
+Your response must be valid raw JSON conforming to this schema:
+{
+  "action": "navigate" | "click" | "fill" | "verify" | "complete" | "fail",
+  "target": "string (optional)",
+  "field": "string (optional)",
+  "value": "string (optional)",
+  "description": "string",
+  "explanation": "string"
+}`;
+
+async function extractPageLayoutSummary(page: Page): Promise<string> {
+  try {
+    return await page.evaluate(() => {
+      const summary: string[] = [];
+      summary.push(`Page Title: ${document.title}`);
+      
+      const inputs = Array.from(document.querySelectorAll('input:not([type="hidden"]), textarea, select'));
+      const buttons = Array.from(document.querySelectorAll('button, input[type="submit"], input[type="button"], [role="button"]'));
+      const links = Array.from(document.querySelectorAll('a'));
+
+      const getElementLabel = (el: HTMLElement) => {
+        let label = '';
+        if (el.id) {
+          const matchedLabel = document.querySelector(`label[for="${el.id}"]`);
+          if (matchedLabel) label = matchedLabel.textContent || '';
+        }
+        if (!label) {
+          label = el.getAttribute('placeholder') || el.getAttribute('name') || el.getAttribute('aria-label') || el.getAttribute('id') || '';
+        }
+        return label.trim();
+      };
+
+      summary.push('--- VISIBLE FORM FIELDS ---');
+      inputs.forEach((input, index) => {
+        const htmlInput = input as HTMLElement;
+        const rect = htmlInput.getBoundingClientRect();
+        const isVisible = rect.width > 0 && rect.height > 0 && window.getComputedStyle(htmlInput).display !== 'none';
+        if (isVisible) {
+          const type = htmlInput.getAttribute('type') || htmlInput.tagName.toLowerCase();
+          const label = getElementLabel(htmlInput);
+          const value = (htmlInput as HTMLInputElement).value || '';
+          summary.push(`Field ${index + 1}: Label/Placeholder="${label}" | Type="${type}" | CurrentValue="${value}"`);
+        }
+      });
+
+      summary.push('--- VISIBLE BUTTONS ---');
+      buttons.forEach((btn, index) => {
+        const htmlBtn = btn as HTMLElement;
+        const rect = htmlBtn.getBoundingClientRect();
+        const isVisible = rect.width > 0 && rect.height > 0 && window.getComputedStyle(htmlBtn).display !== 'none';
+        if (isVisible) {
+          const text = htmlBtn.innerText.trim() || htmlBtn.getAttribute('value') || htmlBtn.getAttribute('aria-label') || 'Button';
+          summary.push(`Button ${index + 1}: Text="${text}"`);
+        }
+      });
+
+      summary.push('--- VISIBLE LINKS ---');
+      links.forEach((link, index) => {
+        const htmlLink = link as HTMLElement;
+        const rect = htmlLink.getBoundingClientRect();
+        const isVisible = rect.width > 0 && rect.height > 0 && window.getComputedStyle(htmlLink).display !== 'none';
+        if (isVisible && summary.length < 50) {
+          const text = htmlLink.innerText.trim();
+          const href = htmlLink.getAttribute('href') || '';
+          if (text) {
+            summary.push(`Link ${index + 1}: Text="${text}" | Href="${href}"`);
+          }
+        }
+      });
+
+      return summary.join('\n');
+    });
+  } catch (err) {
+    return 'Failed to extract layout elements: ' + String(err);
+  }
+}
+
+async function getVisionStepDecision(
+  page: Page,
+  task: string,
+  expectedResult?: string,
+  executedStepsLog?: string
+): Promise<VisionStepDecision> {
+  const currentUrl = page.url();
+  const layoutSummary = await extractPageLayoutSummary(page);
+  const errors = await getVisiblePageErrors(page);
+  
+  const screenshotBuffer = await page.screenshot({ type: 'jpeg', quality: 75 });
+  const base64Image = screenshotBuffer.toString('base64');
+
+  const userPrompt = `Target Task: "${task}"
+Expected Success Indicator: "${expectedResult || 'None specified'}"
+Current Browser URL: ${currentUrl}
+
+EXPLICIT VISIBLE ELEMENTS LAYOUT:
+${layoutSummary}
+
+OBSERVED PAGE ERRORS OR VALIDATION WARNINGS (IF ANY):
+${errors.length > 0 ? errors.map(e => `- ${e}`).join('\n') : 'None detected.'}
+
+ALREADY EXECUTED STEPS HISTORY:
+${executedStepsLog || 'No steps executed yet.'}`;
+
+  const completion = await openai.chat.completions.create({
+    model: 'gpt-4o-mini',
+    messages: [
+      { role: 'system', content: VISION_SYSTEM_PROMPT },
+      {
+        role: 'user',
+        content: [
+          { type: 'text', text: userPrompt },
+          {
+            type: 'image_url',
+            image_url: {
+              url: `data:image/jpeg;base64,${base64Image}`,
+            },
+          },
+        ],
+      },
+    ],
+    response_format: { type: 'json_object' },
+  });
+
+  const content = completion.choices[0].message.content;
+  if (!content) throw new Error('Empty response from OpenAI Vision Agent.');
+
+  return JSON.parse(content) as VisionStepDecision;
+}
+
 export async function runBrowserTest(runId: string, startUrl: string, plan: TestPlan): Promise<void> {
   const screenshotsDir = path.join(process.cwd(), 'public', 'screenshots');
   if (!fs.existsSync(screenshotsDir)) {
@@ -531,199 +689,466 @@ export async function runBrowserTest(runId: string, startUrl: string, plan: Test
     let stepIndex = 0;
     let runFailed = false;
 
-    for (const step of plan.steps) {
-      if (runFailed) {
-        // Mark skipped
-        await runStore.addStepResult(runId, {
-          stepId: step.id,
-          status: 'skipped',
-        });
-        continue;
-      }
+    // Check if it's a dynamic vision execution or static deterministic run
+    const isDynamicVision = plan.steps.length === 1 && plan.steps[0].action === 'navigate';
 
-      console.log(`[Runner] Executing step ${step.id}: ${step.description}`);
-      const startTime = Date.now();
-
-      // Update state to running
+    if (isDynamicVision) {
+      console.log(`[Runner] Starting Dynamic Vision Agent Loop for run ${runId}`);
+      
+      // Step 1: Navigate to the start URL (initial placeholder step)
+      const initialStep = plan.steps[0];
       await runStore.addStepResult(runId, {
-        stepId: step.id,
+        stepId: initialStep.id,
         status: 'running',
       });
-      if (stepIndex > 0) {
-        await captureLivePreview(page, runId);
-      }
+      await runStore.updateRun(runId, { progress: 10 });
       
-      const currentProgress = Math.round(5 + (stepIndex / totalSteps) * 90);
-      await runStore.updateRun(runId, { progress: currentProgress });
-
       try {
-        // Enforce 15s timeout per step
-        await page.waitForTimeout(200); // Small breath before action
-
-        switch (step.action) {
-          case 'navigate': {
-            let targetUrl = step.target || '';
-            if (targetUrl.startsWith('/')) {
-              // Convert absolute path to full url based on current site, or base url
-              const base = new URL(startUrl);
-              targetUrl = `${base.protocol}//${base.host}${targetUrl}`;
-            } else if (!/^https?:\/\//i.test(targetUrl)) {
-              // Fallback if AI forgot protocol
-              targetUrl = `https://${targetUrl}`;
-            }
-
-            await page.goto(targetUrl, { waitUntil: 'load', timeout: 15000 });
-            await captureLivePreview(page, runId);
-            break;
-          }
-
-          case 'fill': {
-            const fieldVal = step.field || '';
-            const fieldLower = fieldVal.toLowerCase();
-            
-            // If the planner generated a generic form-filling step, or the field is generic/empty,
-            // we dynamically auto-fill all visible fields on the form with smart values!
-            if (!fieldVal || fieldLower.includes('required') || fieldLower.includes('field') || fieldLower.includes('form') || fieldLower.includes('all')) {
-              await fillAllVisibleFields(page, step.value || 'Sample Text');
-            } else {
-              const fieldLocator = await findInputElement(page, fieldVal);
-              await fieldLocator.focus({ timeout: 15000 });
-              await captureLivePreview(page, runId);
-              await fieldLocator.fill(step.value || '', { timeout: 15000 });
-            }
-            await captureLivePreview(page, runId);
-            break;
-          }
-
-          case 'click': {
-            const clickLocator = await findClickableElement(page, step.target || '');
-            await clickLocator.click({ timeout: 15000 });
-            await page.waitForTimeout(400); // Allow navigation or UI transition to begin
-            await captureLivePreview(page, runId);
-            break;
-          }
-
-          case 'verify': {
-            const textToFind = step.target || '';
-            
-            // Wait for text to appear on page (timeout 15s)
-            let found = false;
-            try {
-              await page.waitForFunction((txt) => {
-                return document.body.innerText.includes(txt);
-              }, textToFind, { timeout: 15000 });
-              found = true;
-            } catch {
-              // Try finding as CSS element selector and fetching text content
-              try {
-                const el = page.locator(textToFind);
-                if (await el.count() > 0 && await el.first().isVisible()) {
-                  found = true;
-                }
-              } catch {}
-            }
-
-            if (!found) {
-              throw new Error(`Expected text or element "${textToFind}" was not found on the page.`);
-            }
-            await captureLivePreview(page, runId);
-            break;
-          }
-
-          default:
-            throw new Error(`Unsupported action: ${step.action}`);
-        }
-
-        // Action passed!
-        const duration = Date.now() - startTime;
+        await page.goto(startUrl, { waitUntil: 'load', timeout: 15000 });
+        const webScreenshotPath = await saveScreenshot(page, runId, initialStep.id);
         
-        // Take screenshot
-        const webScreenshotPath = await saveScreenshot(page, runId, step.id);
-
         await runStore.addStepResult(runId, {
-          stepId: step.id,
+          stepId: initialStep.id,
           status: 'passed',
-          durationMs: duration,
           screenshotPath: webScreenshotPath,
           url: page.url(),
         });
-
-        // Add to general evidence
         await runStore.addEvidence(runId, {
-          id: `evidence-${step.id}-passed`,
-          stepId: step.id,
+          id: `evidence-${initialStep.id}-passed`,
+          stepId: initialStep.id,
           type: 'screenshot',
           value: webScreenshotPath,
           timestamp: new Date().toISOString(),
         });
-
-        await runStore.addEvidence(runId, {
-          id: `evidence-${step.id}-url`,
-          stepId: step.id,
-          type: 'url',
-          value: page.url(),
-          timestamp: new Date().toISOString(),
-        });
-
-      } catch (stepError: any) {
-        console.error(`[Runner] Step ${step.id} failed:`, stepError.message);
+        await captureLivePreview(page, runId);
+      } catch (err: any) {
         runFailed = true;
-
-        const duration = Date.now() - startTime;
-        
-        // Try to capture error screenshot
-        let webScreenshotPath = '';
-        try {
-          webScreenshotPath = await saveScreenshot(page, runId, `${step.id}-fail`);
-        } catch (screenshotError) {
-          console.error('[Runner] Failed to take failure screenshot:', screenshotError);
-        }
-
-        // Save current HTML context (text around the element)
-        let pageText = '';
-        try {
-          pageText = await page.evaluate(() => document.body.innerText.slice(0, 2000));
-        } catch {}
-
+        const webScreenshotPath = await saveScreenshot(page, runId, `${initialStep.id}-fail`).catch(() => '');
         await runStore.addStepResult(runId, {
-          stepId: step.id,
+          stepId: initialStep.id,
           status: 'failed',
-          durationMs: duration,
-          error: stepError.message || String(stepError),
+          error: `Initial navigation failed: ${err.message || err}`,
           screenshotPath: webScreenshotPath || undefined,
           url: page.url(),
         });
+      }
 
-        if (webScreenshotPath) {
+      // Live step log accumulator for context window matching
+      const executedStepsLog: string[] = [
+        `- Step 1: "Navigate to starting page" | Status: passed | URL: ${page.url()}`
+      ];
+
+      const maxSteps = 10;
+      stepIndex = 1;
+
+      while (stepIndex < maxSteps && !runFailed) {
+        // Enforce breath time before evaluation
+        await page.waitForTimeout(1000);
+
+        console.log(`[Runner] Visual evaluation loop step ${stepIndex + 1}...`);
+        
+        // 1. Get the next dynamic step decision from GPT-4o-mini
+        let decision: VisionStepDecision;
+        try {
+          decision = await getVisionStepDecision(
+            page,
+            plan.goal,
+            plan.goal,
+            executedStepsLog.join('\n')
+          );
+        } catch (err: any) {
+          console.error(`[Runner] Vision evaluation call failed:`, err);
+          runFailed = true;
+          break;
+        }
+
+        console.log(`[Runner] Decided next step: action="${decision.action}" | explanation="${decision.explanation}"`);
+
+        // Check if the AI declared the task complete or failed
+        if (decision.action === 'complete') {
+          console.log('[Runner] Vision Agent declared the task complete!');
+          break;
+        }
+        if (decision.action === 'fail') {
+          console.error('[Runner] Vision Agent declared the task failed:', decision.explanation);
+          runFailed = true;
+          
+          const failStepId = `step-${stepIndex + 1}`;
+          const currentPlan = await runStore.getRun(runId).then(r => r?.plan);
+          if (currentPlan) {
+            currentPlan.steps.push({
+              id: failStepId,
+              action: 'verify',
+              target: 'Goal check',
+              description: decision.description || 'Vision Agent failed to complete the task.'
+            });
+            await runStore.updateRun(runId, { plan: currentPlan });
+          }
+          await runStore.addStepResult(runId, {
+            stepId: failStepId,
+            status: 'failed',
+            error: decision.explanation || 'Vision Agent failed to satisfy success condition.',
+            url: page.url()
+          });
+          break;
+        }
+
+        // Generate the step properties dynamically
+        const nextStepId = `step-${stepIndex + 1}`;
+        const nextStep: TestStep = {
+          id: nextStepId,
+          action: decision.action,
+          target: decision.target,
+          field: decision.field,
+          value: decision.value,
+          description: decision.description || `${decision.action} action evaluated by vision`,
+        };
+
+        // Append the new step dynamically to the run's plan in DB
+        const currentPlan = await runStore.getRun(runId).then(r => r?.plan);
+        if (currentPlan) {
+          currentPlan.steps.push(nextStep);
+          await runStore.updateRun(runId, { plan: currentPlan });
+        }
+
+        // Add the step result as running
+        await runStore.addStepResult(runId, {
+          stepId: nextStepId,
+          status: 'running',
+        });
+        await captureLivePreview(page, runId);
+        
+        const currentProgress = Math.round(10 + (stepIndex / maxSteps) * 85);
+        await runStore.updateRun(runId, { progress: currentProgress });
+
+        const startTime = Date.now();
+
+        try {
+          // 2. Execute the action
+          switch (nextStep.action) {
+            case 'navigate': {
+              let targetUrl = nextStep.target || '';
+              if (targetUrl.startsWith('/')) {
+                const base = new URL(page.url());
+                targetUrl = `${base.protocol}//${base.host}${targetUrl}`;
+              } else if (!/^https?:\/\//i.test(targetUrl)) {
+                targetUrl = `https://${targetUrl}`;
+              }
+              await page.goto(targetUrl, { waitUntil: 'load', timeout: 15000 });
+              break;
+            }
+
+            case 'fill': {
+              const fieldVal = nextStep.field || '';
+              const fieldLower = fieldVal.toLowerCase();
+              if (!fieldVal || fieldLower.includes('required') || fieldLower.includes('field') || fieldLower.includes('form') || fieldLower.includes('all')) {
+                await fillAllVisibleFields(page, nextStep.value || 'Sample Text');
+              } else {
+                const fieldLocator = await findInputElement(page, fieldVal);
+                await fieldLocator.focus({ timeout: 15000 });
+                await fieldLocator.fill(nextStep.value || '', { timeout: 15000 });
+              }
+              break;
+            }
+
+            case 'click': {
+              const clickLocator = await findClickableElement(page, nextStep.target || '');
+              await clickLocator.click({ timeout: 15000 });
+              await page.waitForTimeout(400);
+              break;
+            }
+
+            case 'verify': {
+              const textToFind = nextStep.target || '';
+              let found = false;
+              try {
+                await page.waitForFunction((txt) => {
+                  return document.body.innerText.includes(txt);
+                }, textToFind, { timeout: 15000 });
+                found = true;
+              } catch {
+                try {
+                  const el = page.locator(textToFind);
+                  if (await el.count() > 0 && await el.first().isVisible()) {
+                    found = true;
+                  }
+                } catch {}
+              }
+              if (!found) {
+                throw new Error(`Expected text or element "${textToFind}" was not found on the page.`);
+              }
+              break;
+            }
+          }
+
+          // 3. Save passed details
+          const duration = Date.now() - startTime;
+          const webScreenshotPath = await saveScreenshot(page, runId, nextStepId);
+
+          await runStore.addStepResult(runId, {
+            stepId: nextStepId,
+            status: 'passed',
+            durationMs: duration,
+            screenshotPath: webScreenshotPath,
+            url: page.url(),
+          });
           await runStore.addEvidence(runId, {
-            id: `evidence-${step.id}-fail-screenshot`,
+            id: `evidence-${nextStepId}-passed`,
+            stepId: nextStepId,
+            type: 'screenshot',
+            value: webScreenshotPath,
+            timestamp: new Date().toISOString(),
+          });
+
+          // Log success in history log
+          executedStepsLog.push(
+            `- Step ${stepIndex + 1}: "${nextStep.description}" | Status: passed | URL: ${page.url()}`
+          );
+
+          await captureLivePreview(page, runId);
+
+        } catch (stepError: any) {
+          console.error(`[Runner] Dynamic Step ${nextStepId} failed:`, stepError.message);
+          runFailed = true;
+
+          const duration = Date.now() - startTime;
+          let webScreenshotPath = '';
+          try {
+            webScreenshotPath = await saveScreenshot(page, runId, `${nextStepId}-fail`);
+          } catch {}
+
+          let pageText = '';
+          try {
+            pageText = await page.evaluate(() => document.body.innerText.slice(0, 2000));
+          } catch {}
+
+          await runStore.addStepResult(runId, {
+            stepId: nextStepId,
+            status: 'failed',
+            durationMs: duration,
+            error: stepError.message || String(stepError),
+            screenshotPath: webScreenshotPath || undefined,
+            url: page.url(),
+          });
+
+          if (webScreenshotPath) {
+            await runStore.addEvidence(runId, {
+              id: `evidence-${nextStepId}-fail-screenshot`,
+              stepId: nextStepId,
+              type: 'screenshot',
+              value: webScreenshotPath,
+              timestamp: new Date().toISOString(),
+            });
+          }
+          if (pageText) {
+            await runStore.addEvidence(runId, {
+              id: `evidence-${nextStepId}-fail-text`,
+              stepId: nextStepId,
+              type: 'text',
+              value: pageText,
+              timestamp: new Date().toISOString(),
+            });
+          }
+        }
+
+        stepIndex++;
+      }
+    } else {
+      // Execute the existing static step-by-step runner logic
+      for (const step of plan.steps) {
+        if (runFailed) {
+          // Mark skipped
+          await runStore.addStepResult(runId, {
+            stepId: step.id,
+            status: 'skipped',
+          });
+          continue;
+        }
+
+        console.log(`[Runner] Executing step ${step.id}: ${step.description}`);
+        const startTime = Date.now();
+
+        // Update state to running
+        await runStore.addStepResult(runId, {
+          stepId: step.id,
+          status: 'running',
+        });
+        if (stepIndex > 0) {
+          await captureLivePreview(page, runId);
+        }
+        
+        const currentProgress = Math.round(5 + (stepIndex / totalSteps) * 90);
+        await runStore.updateRun(runId, { progress: currentProgress });
+
+        try {
+          // Enforce 15s timeout per step
+          await page.waitForTimeout(200); // Small breath before action
+
+          switch (step.action) {
+            case 'navigate': {
+              let targetUrl = step.target || '';
+              if (targetUrl.startsWith('/')) {
+                // Convert absolute path to full url based on current site, or base url
+                const base = new URL(startUrl);
+                targetUrl = `${base.protocol}//${base.host}${targetUrl}`;
+              } else if (!/^https?:\/\//i.test(targetUrl)) {
+                // Fallback if AI forgot protocol
+                targetUrl = `https://${targetUrl}`;
+              }
+
+              await page.goto(targetUrl, { waitUntil: 'load', timeout: 15000 });
+              await captureLivePreview(page, runId);
+              break;
+            }
+
+            case 'fill': {
+              const fieldVal = step.field || '';
+              const fieldLower = fieldVal.toLowerCase();
+              
+              // If the planner generated a generic form-filling step, or the field is generic/empty,
+              // we dynamically auto-fill all visible fields on the form with smart values!
+              if (!fieldVal || fieldLower.includes('required') || fieldLower.includes('field') || fieldLower.includes('form') || fieldLower.includes('all')) {
+                await fillAllVisibleFields(page, step.value || 'Sample Text');
+              } else {
+                const fieldLocator = await findInputElement(page, fieldVal);
+                await fieldLocator.focus({ timeout: 15000 });
+                await captureLivePreview(page, runId);
+                await fieldLocator.fill(step.value || '', { timeout: 15000 });
+              }
+              await captureLivePreview(page, runId);
+              break;
+            }
+
+            case 'click': {
+              const clickLocator = await findClickableElement(page, step.target || '');
+              await clickLocator.click({ timeout: 15000 });
+              await page.waitForTimeout(400); // Allow navigation or UI transition to begin
+              await captureLivePreview(page, runId);
+              break;
+            }
+
+            case 'verify': {
+              const textToFind = step.target || '';
+              
+              // Wait for text to appear on page (timeout 15s)
+              let found = false;
+              try {
+                await page.waitForFunction((txt) => {
+                  return document.body.innerText.includes(txt);
+                }, textToFind, { timeout: 15000 });
+                found = true;
+              } catch {
+                // Try finding as CSS element selector and fetching text content
+                try {
+                  const el = page.locator(textToFind);
+                  if (await el.count() > 0 && await el.first().isVisible()) {
+                    found = true;
+                  }
+                } catch {}
+              }
+
+              if (!found) {
+                throw new Error(`Expected text or element "${textToFind}" was not found on the page.`);
+              }
+              await captureLivePreview(page, runId);
+              break;
+            }
+
+            default:
+              throw new Error(`Unsupported action: ${step.action}`);
+          }
+
+          // Action passed!
+          const duration = Date.now() - startTime;
+          
+          // Take screenshot
+          const webScreenshotPath = await saveScreenshot(page, runId, step.id);
+
+          await runStore.addStepResult(runId, {
+            stepId: step.id,
+            status: 'passed',
+            durationMs: duration,
+            screenshotPath: webScreenshotPath,
+            url: page.url(),
+          });
+
+          // Add to general evidence
+          await runStore.addEvidence(runId, {
+            id: `evidence-${step.id}-passed`,
             stepId: step.id,
             type: 'screenshot',
             value: webScreenshotPath,
             timestamp: new Date().toISOString(),
           });
-        }
 
-        if (pageText) {
           await runStore.addEvidence(runId, {
-            id: `evidence-${step.id}-fail-text`,
+            id: `evidence-${step.id}-url`,
             stepId: step.id,
-            type: 'text',
-            value: pageText,
+            type: 'url',
+            value: page.url(),
+            timestamp: new Date().toISOString(),
+          });
+
+        } catch (stepError: any) {
+          console.error(`[Runner] Step ${step.id} failed:`, stepError.message);
+          runFailed = true;
+
+          const duration = Date.now() - startTime;
+          
+          // Try to capture error screenshot
+          let webScreenshotPath = '';
+          try {
+            webScreenshotPath = await saveScreenshot(page, runId, `${step.id}-fail`);
+          } catch (screenshotError) {
+            console.error('[Runner] Failed to take failure screenshot:', screenshotError);
+          }
+
+          // Save current HTML context (text around the element)
+          let pageText = '';
+          try {
+            pageText = await page.evaluate(() => document.body.innerText.slice(0, 2000));
+          } catch {}
+
+          await runStore.addStepResult(runId, {
+            stepId: step.id,
+            status: 'failed',
+            durationMs: duration,
+            error: stepError.message || String(stepError),
+            screenshotPath: webScreenshotPath || undefined,
+            url: page.url(),
+          });
+
+          if (webScreenshotPath) {
+            await runStore.addEvidence(runId, {
+              id: `evidence-${step.id}-fail-screenshot`,
+              stepId: step.id,
+              type: 'screenshot',
+              value: webScreenshotPath,
+              timestamp: new Date().toISOString(),
+            });
+          }
+
+          if (pageText) {
+            await runStore.addEvidence(runId, {
+              id: `evidence-${step.id}-fail-text`,
+              stepId: step.id,
+              type: 'text',
+              value: pageText,
+              timestamp: new Date().toISOString(),
+            });
+          }
+
+          await runStore.addEvidence(runId, {
+            id: `evidence-${step.id}-fail-url`,
+            stepId: step.id,
+            type: 'url',
+            value: page.url(),
             timestamp: new Date().toISOString(),
           });
         }
 
-        await runStore.addEvidence(runId, {
-          id: `evidence-${step.id}-fail-url`,
-          stepId: step.id,
-          type: 'url',
-          value: page.url(),
-          timestamp: new Date().toISOString(),
-        });
+        stepIndex++;
       }
-
-      stepIndex++;
     }
 
     clearTimeout(testTimeout);
