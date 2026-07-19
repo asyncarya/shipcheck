@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextResponse, after } from 'next/server';
 import { runStore } from '@/lib/runStore';
 import { runBrowserTest } from '@/lib/runner';
 import { createServer } from '@/lib/supabaseServer';
@@ -48,9 +48,11 @@ export async function POST(request: Request) {
     await runStore.createRun(runId, url, plan.goal, userId);
     await runStore.updateRun(runId, { plan, planId });
 
-    // Kick off test runner asynchronously (no await)
-    runBrowserTest(runId, url, plan).catch((err) => {
-      console.error(`[API Runs] Background run ${runId} execution failure:`, err);
+    // Kick off test runner asynchronously (keep alive in Vercel with after)
+    after(() => {
+      runBrowserTest(runId, url, plan).catch((err) => {
+        console.error(`[API Runs] Background run ${runId} execution failure:`, err);
+      });
     });
 
     return NextResponse.json({
