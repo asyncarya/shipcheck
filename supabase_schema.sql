@@ -168,4 +168,55 @@ CREATE POLICY "Allow public deletes from evidence bucket"
           AND (user_id = auth.uid() OR user_id IS NULL)
       )
     )
+    )
+  );
+
+-- Create Supabase Storage bucket for avatars if not exists
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('avatars', 'avatars', true)
+ON CONFLICT (id) DO NOTHING;
+
+-- Clean up existing storage policies if they exist to prevent execution conflicts
+DROP POLICY IF EXISTS "Allow public uploads to avatars bucket" ON storage.objects;
+DROP POLICY IF EXISTS "Allow public reads from avatars bucket" ON storage.objects;
+DROP POLICY IF EXISTS "Allow public updates to avatars bucket" ON storage.objects;
+DROP POLICY IF EXISTS "Allow public deletes from avatars bucket" ON storage.objects;
+
+-- Allow uploads to own avatar
+CREATE POLICY "Allow public uploads to avatars bucket"
+  ON storage.objects FOR INSERT
+  TO anon, authenticated
+  WITH CHECK (
+    bucket_id = 'avatars' AND (
+      auth.uid() IS NULL OR
+      (auth.uid())::text = split_part(name, '/', 1)
+    )
+  );
+
+-- Allow reads from avatars
+CREATE POLICY "Allow public reads from avatars bucket"
+  ON storage.objects FOR SELECT
+  TO anon, authenticated
+  USING (bucket_id = 'avatars');
+
+-- Allow updates to own avatar
+CREATE POLICY "Allow public updates to avatars bucket"
+  ON storage.objects FOR UPDATE
+  TO anon, authenticated
+  USING (
+    bucket_id = 'avatars' AND (
+      auth.uid() IS NULL OR
+      (auth.uid())::text = split_part(name, '/', 1)
+    )
+  );
+
+-- Allow deletes from own avatar
+CREATE POLICY "Allow public deletes from avatars bucket"
+  ON storage.objects FOR DELETE
+  TO anon, authenticated
+  USING (
+    bucket_id = 'avatars' AND (
+      auth.uid() IS NULL OR
+      (auth.uid())::text = split_part(name, '/', 1)
+    )
   );

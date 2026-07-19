@@ -24,7 +24,9 @@ import {
   Home,
   Lock,
   Image as ImageIcon,
-  Trash2
+  Trash2,
+  Menu,
+  X
 } from 'lucide-react';
 
 interface WorkspaceDashboardProps {
@@ -45,6 +47,7 @@ export default function WorkspaceDashboard({
   const [loading, setLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [showMobileHistory, setShowMobileHistory] = useState(false);
   const ITEMS_PER_PAGE = 5;
 
   const [mounted, setMounted] = useState(false);
@@ -124,9 +127,9 @@ export default function WorkspaceDashboard({
 
       // If a custom file was uploaded, save to Supabase Storage first
       if (avatarFile && userId) {
-        const fileName = `avatars/${userId}-${Date.now()}.jpg`;
+        const fileName = `${userId}/avatar-${Date.now()}.jpg`;
         const { error: uploadError } = await client.storage
-          .from('evidence')
+          .from('avatars')
           .upload(fileName, avatarFile, {
             contentType: avatarFile.type,
             upsert: true
@@ -135,7 +138,7 @@ export default function WorkspaceDashboard({
         if (uploadError) throw uploadError;
 
         const { data: { publicUrl } } = client.storage
-          .from('evidence')
+          .from('avatars')
           .getPublicUrl(fileName);
 
         finalAvatarUrl = publicUrl;
@@ -216,7 +219,7 @@ export default function WorkspaceDashboard({
   return (
     <div className="h-screen overflow-hidden bg-bg-app text-text-primary flex flex-col md:flex-row selection:bg-accent-primary/10 selection:text-accent-primary">
       {/* Sidebar Panel */}
-      <aside className="w-full md:w-80 bg-bg-card/45 border-b md:border-b-0 md:border-r border-border-subtle flex flex-col justify-between flex-shrink-0 z-10">
+      <aside className={`${showMobileHistory ? 'fixed inset-0 z-50 flex flex-col bg-bg-app' : 'hidden md:flex flex-col'} w-full md:w-80 md:bg-bg-card/45 border-b md:border-b-0 md:border-r border-border-subtle justify-between flex-shrink-0 md:z-10`}>
         
         {/* Top sidebar wrapper */}
         <div className="flex flex-col flex-1 min-h-0">
@@ -224,9 +227,17 @@ export default function WorkspaceDashboard({
           {/* Logo Brand Header */}
           <div className="px-6 py-5.5 border-b border-border-subtle flex items-center justify-between">
             <Link href="/dashboard" className="flex items-center gap-2">
-              <img src="/logo.png" alt="ShipCheck Logo" className="w-8 h-8 rounded-lg object-cover bg-accent-glow border border-border-subtle" />
-              <span className="font-bold text-base tracking-tight font-serif-anthropic text-text-primary">ShipCheck</span>
+              <div className="w-8 h-8 rounded-lg bg-accent-glow border border-border-subtle flex items-center justify-center font-bold text-xs font-serif-anthropic text-accent-primary">SC</div>
+              <span className="font-bold text-base tracking-tight font-serif-anthropic"><span className="text-black dark:text-white">Ship</span><span className="text-accent-primary">Check</span></span>
             </Link>
+            {showMobileHistory && (
+              <button 
+                className="md:hidden p-2 text-text-secondary hover:text-text-primary bg-bg-card rounded-lg border border-border-subtle active:scale-95 transition"
+                onClick={() => setShowMobileHistory(false)}
+              >
+                <X size={16} />
+              </button>
+            )}
           </div>
 
           {/* Test Runs History title */}
@@ -239,7 +250,7 @@ export default function WorkspaceDashboard({
           </div>
 
           {/* Runs history scrollable list */}
-          <div className="flex-1 overflow-y-auto max-h-[350px] md:max-h-none">
+          <div className="flex-1 overflow-y-auto">
             {runs.length === 0 ? (
               <div className="px-6 py-8 text-center space-y-2">
                 <Clock size={20} className="mx-auto text-text-secondary/50" />
@@ -346,10 +357,23 @@ export default function WorkspaceDashboard({
       </aside>
 
       {/* Main Workspace Frame */}
-      <main className="flex-1 flex flex-col justify-between relative overflow-hidden">
+      <main className="flex-1 flex flex-col justify-between relative overflow-y-auto overflow-x-hidden">
+        
+        {/* Mobile Header (Hamburger) */}
+        <div className="md:hidden absolute top-6 left-6 z-30 flex items-center gap-3">
+          <button 
+            className="w-10 h-10 rounded-xl bg-bg-card hover:bg-border-subtle border border-border-subtle flex items-center justify-center text-text-primary shadow-sm active:scale-95 transition cursor-pointer"
+            onClick={() => setShowMobileHistory(true)}
+          >
+            <Menu size={18} />
+          </button>
+          <div className="w-10 h-10 rounded-xl bg-accent-glow border border-border-subtle flex items-center justify-center font-bold text-xs font-serif-anthropic text-accent-primary">
+            SC
+          </div>
+        </div>
         
         {/* Top-Right Header Actions (ThemeToggle after Profile) */}
-        <div className="absolute top-6 right-6 z-30 flex items-center gap-3">
+        <div className="absolute top-6 right-6 z-30 flex items-start gap-3">
           {hasSupabaseKey && (
             <div 
               className="relative pb-3"
@@ -430,7 +454,7 @@ export default function WorkspaceDashboard({
         <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808006_1px,transparent_1px),linear-gradient(to_bottom,#80808006_1px,transparent_1px)] bg-[size:16px_16px] [mask-image:radial-gradient(ellipse_55%_55%_at_50%_40%,#000_80%,transparent_100%)] pointer-events-none" />
         <div className="absolute top-0 left-1/4 w-80 h-80 rounded-full bg-accent-primary/5 blur-3xl pointer-events-none z-0" />
 
-        <div className="w-full max-w-3xl mx-auto px-6 py-12 md:py-20 z-10 space-y-8">
+        <div className="w-full max-w-3xl mx-auto px-6 pt-24 pb-12 md:py-20 z-10 space-y-8">
           <div className="space-y-4 text-center sm:text-left flex flex-col items-center sm:items-start animate-fade-in-up">
             <div className="inline-flex items-center gap-1.5 px-3 py-1 text-[10px] font-bold uppercase tracking-wider rounded-full border border-border-subtle bg-bg-card/75 text-accent-primary shadow-3xs">
               <Sparkles size={11} className="text-accent-primary animate-pulse" />
@@ -455,7 +479,7 @@ export default function WorkspaceDashboard({
 
         {/* Global Footer */}
         <footer className="text-center py-6 border-t border-border-subtle text-[10px] text-text-secondary/50 z-10 bg-bg-card/5">
-          ShipCheck Workspace &middot; Built for the AI Hackathon
+          <span className="text-black dark:text-white">Ship</span><span className="text-accent-primary">Check</span> Workspace &middot; Built for the AI Hackathon
         </footer>
       </main>
 
@@ -536,17 +560,36 @@ export default function WorkspaceDashboard({
                 </nav>
               </div>
 
-              {/* Cancel Close button */}
-              <button
-                type="button"
-                onClick={() => {
-                  setProfileModalOpen(false);
-                  setPassword('');
-                }}
-                className="hidden md:block w-full py-2 border border-border-subtle hover:border-border-subtle/80 text-text-secondary hover:text-text-primary rounded-xl text-xs font-semibold active:scale-95 transition cursor-pointer"
-              >
-                Close Settings
-              </button>
+              <div className="space-y-2 mt-4 md:mt-0">
+                {/* Logout button */}
+                <button
+                  type="button"
+                  onClick={handleSignOut}
+                  disabled={loading}
+                  className="w-full flex items-center justify-center gap-1.5 py-2 border border-border-subtle hover:border-red-950/30 text-text-secondary hover:text-red-500 hover:bg-red-500/5 rounded-xl text-xs font-semibold active:scale-95 transition cursor-pointer disabled:opacity-40"
+                >
+                  {loading ? (
+                    <Loader2 size={12} className="animate-spin text-text-secondary" />
+                  ) : (
+                    <>
+                      <LogOut size={12} />
+                      <span>Log out</span>
+                    </>
+                  )}
+                </button>
+
+                {/* Cancel Close button */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setProfileModalOpen(false);
+                    setPassword('');
+                  }}
+                  className="hidden md:block w-full py-2 border border-border-subtle hover:border-border-subtle/80 text-text-secondary hover:text-text-primary rounded-xl text-xs font-semibold active:scale-95 transition cursor-pointer"
+                >
+                  Close Settings
+                </button>
+              </div>
             </div>
 
             {/* Modal Right Column: Tab Scrollable Forms panel */}
