@@ -61,9 +61,20 @@ export default function RunPage({ params }: RunPageProps) {
     const fetchRunStatus = async () => {
       try {
         const res = await fetch(`/api/runs/${runId}`);
+        const contentType = res.headers.get('content-type');
+        const isJson = contentType && contentType.indexOf('application/json') !== -1;
+
         if (!res.ok) {
-          const errData = await res.json();
-          throw new Error(errData.error?.message || 'Failed to fetch run data.');
+          if (isJson) {
+            const errData = await res.json();
+            throw new Error(errData.error?.message || 'Failed to fetch run data.');
+          } else {
+            throw new Error(`Server error: ${res.status} ${res.statusText}`);
+          }
+        }
+
+        if (!isJson) {
+          throw new Error('Received unexpected non-JSON response from server.');
         }
 
         const data = await res.json();
@@ -155,10 +166,23 @@ export default function RunPage({ params }: RunPageProps) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ url: run.url, planId: run.planId }),
       });
-      const data = await res.json();
+      const contentType = res.headers.get('content-type');
+      const isJson = contentType && contentType.indexOf('application/json') !== -1;
+
       if (!res.ok) {
-        throw new Error(data.error?.message || 'Failed to re-run test.');
+        if (isJson) {
+          const data = await res.json();
+          throw new Error(data.error?.message || 'Failed to re-run test.');
+        } else {
+          throw new Error(`Server error: ${res.status} ${res.statusText}`);
+        }
       }
+
+      if (!isJson) {
+        throw new Error('Received unexpected non-JSON response from server.');
+      }
+
+      const data = await res.json();
       router.push(`/dashboard/${data.run.id}`);
     } catch (e: any) {
       setError(e.message || 'Error launching test retry.');

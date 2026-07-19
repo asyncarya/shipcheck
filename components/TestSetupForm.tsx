@@ -61,8 +61,24 @@ export default function TestSetupForm() {
         body: JSON.stringify({ url, task, expectedResult }),
       });
 
+      const planContentType = planRes.headers.get('content-type');
+      const isPlanJson = planContentType && planContentType.indexOf('application/json') !== -1;
+
+      if (!planRes.ok) {
+        if (isPlanJson) {
+          const planData = await planRes.json();
+          throw new Error(planData.error?.message || 'Failed to generate test plan.');
+        } else {
+          throw new Error(`Failed to generate test plan: Server returned ${planRes.status}`);
+        }
+      }
+
+      if (!isPlanJson) {
+        throw new Error('Received unexpected non-JSON response from server during planning.');
+      }
+
       const planData = await planRes.json();
-      if (!planRes.ok || planData.error) {
+      if (planData.error) {
         throw new Error(planData.error?.message || 'Failed to generate test plan.');
       }
 
@@ -75,8 +91,24 @@ export default function TestSetupForm() {
         body: JSON.stringify({ url, planId: plan.id }),
       });
 
+      const runContentType = runRes.headers.get('content-type');
+      const isRunJson = runContentType && runContentType.indexOf('application/json') !== -1;
+
+      if (!runRes.ok) {
+        if (isRunJson) {
+          const runData = await runRes.json();
+          throw new Error(runData.error?.message || 'Failed to initialize test run.');
+        } else {
+          throw new Error(`Failed to initialize test run: Server returned ${runRes.status}`);
+        }
+      }
+
+      if (!isRunJson) {
+        throw new Error('Received unexpected non-JSON response from server during run initialization.');
+      }
+
       const runData = await runRes.json();
-      if (!runRes.ok || runData.error) {
+      if (runData.error) {
         throw new Error(runData.error?.message || 'Failed to initialize test run.');
       }
 

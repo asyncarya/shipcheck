@@ -172,8 +172,14 @@ export default function WorkspaceDashboard({
           } else {
             // Revert state if deletion fails
             setRuns(prev => prev.map(r => r.id === runId ? { ...r, isDeleting: false } : r));
-            const data = await res.json();
-            alert(data.error?.message || 'Failed to delete test run.');
+            
+            const contentType = res.headers.get('content-type');
+            if (contentType && contentType.indexOf('application/json') !== -1) {
+              const data = await res.json();
+              alert(data.error?.message || 'Failed to delete test run.');
+            } else {
+              alert(`Failed to delete test run: Server returned ${res.status}`);
+            }
           }
         } catch (err) {
           // Revert state on error
