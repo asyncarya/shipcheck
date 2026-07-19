@@ -63,7 +63,7 @@ export default function ScreenshotViewer({
       </div>
 
       {/* Media Content Area */}
-      <div className="h-[450px] w-full bg-bg-card/10 flex items-center justify-center relative overflow-hidden group">
+      <div className="h-64 sm:h-[450px] w-full bg-bg-card/10 flex items-center justify-center relative overflow-hidden group">
         {screenshotPath ? (
           /* eslint-disable-next-line @next/next/no-img-element */
           <img

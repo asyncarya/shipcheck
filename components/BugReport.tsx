@@ -72,9 +72,9 @@ ${report.suggestedFix}
             <p className="text-xs text-text-secondary">All tests executed and verified successfully.</p>
           </div>
         </div>
-        <div className="p-4 bg-emerald-500/5 border border-emerald-500/10 rounded-xl space-y-2 text-sm text-text-primary">
-          <p><strong>Expected:</strong> {report.expectedBehavior}</p>
-          <p><strong>Observed:</strong> {report.actualBehavior}</p>
+        <div className="p-4 bg-emerald-500/5 border border-emerald-500/10 rounded-xl space-y-2 text-sm text-text-primary min-w-0">
+          <p className="break-words"><strong>Expected:</strong> {report.expectedBehavior}</p>
+          <p className="break-words"><strong>Observed:</strong> {report.actualBehavior}</p>
         </div>
       </div>
     );
@@ -119,13 +119,13 @@ ${report.suggestedFix}
             <h4 className="text-xs font-semibold text-text-secondary uppercase tracking-wider">
               Expected Behavior
             </h4>
-            <p className="text-sm text-text-primary leading-relaxed">{report.expectedBehavior}</p>
+            <p className="text-sm text-text-primary leading-relaxed break-words">{report.expectedBehavior}</p>
           </div>
-          <div className="space-y-2 p-4 bg-bg-app border border-border-subtle rounded-xl">
+          <div className="space-y-2 p-4 bg-bg-app border border-border-subtle rounded-xl min-w-0">
             <h4 className="text-xs font-semibold text-text-secondary uppercase tracking-wider">
               Actual Behavior
             </h4>
-            <p className="text-sm text-red-600 dark:text-red-400 leading-relaxed">{report.actualBehavior}</p>
+            <p className="text-sm text-red-600 dark:text-red-400 leading-relaxed break-words">{report.actualBehavior}</p>
           </div>
         </div>
 

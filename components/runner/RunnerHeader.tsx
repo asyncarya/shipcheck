@@ -26,7 +26,7 @@ export default function RunnerHeader({
   handleRetry
 }: RunnerHeaderProps) {
   return (
-    <header className="w-full max-w-7xl mx-auto px-6 py-5 border-b border-border-subtle flex flex-col sm:flex-row sm:items-center justify-between gap-4 z-10">
+    <header className="w-full max-w-7xl mx-auto px-4 sm:px-6 py-5 border-b border-border-subtle flex flex-col sm:flex-row sm:items-center justify-between gap-4 z-10">
       <div className="flex items-center justify-between w-full sm:w-auto">
         <div className="flex items-center gap-3 min-w-0">
           <Link href="/dashboard" className="p-2 text-text-secondary hover:text-text-primary hover:bg-bg-card border border-border-subtle rounded-xl transition flex-shrink-0" title="Back to Setup">

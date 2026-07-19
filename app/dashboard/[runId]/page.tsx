@@ -247,7 +247,7 @@ export default function RunPage({ params }: RunPageProps) {
       )}
 
       {/* Main Panel Container */}
-      <div className="flex-1 w-full max-w-7xl mx-auto px-6 py-8 z-10 min-h-0">
+      <div className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8 z-10 min-h-0">
         {/* Main Grid content */}
         <main className="flex-1 grid lg:grid-cols-12 gap-8 min-w-0">
           
