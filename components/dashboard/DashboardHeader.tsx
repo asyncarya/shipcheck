@@ -39,8 +39,9 @@ export default function DashboardHeader({
 
       {/* Right side: Profile and Theme Actions */}
       <div className="flex items-center gap-3">
-        <div className="relative">
-          {/* Profile Circle Trigger */}
+        {hasSupabaseKey && (
+          <div className="relative">
+            {/* Profile Circle Trigger */}
           <button
             type="button"
             onClick={(e) => {

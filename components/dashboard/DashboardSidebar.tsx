@@ -1,6 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
-import { History, X, Sparkles, CheckCircle2, AlertCircle, Play, Loader2, Trash2 } from 'lucide-react';
+import { History, X, Sparkles, CheckCircle2, AlertCircle, Play, Loader2, Trash2, Clock } from 'lucide-react';
 import { TestRun } from '@/lib/schemas';
 
 interface DashboardSidebarProps {
@@ -77,12 +77,12 @@ export default function DashboardSidebar({
                   <Link href={`/dashboard/${run.id}`} className="flex items-center gap-2 cursor-pointer flex-1 min-w-0" onClick={() => setShowMobileHistory(false)}>
                     <div className="w-5 h-5 rounded flex items-center justify-center flex-shrink-0 bg-bg-card border border-border-subtle">
                       {run.status === 'planning' && <Sparkles size={10} className="text-accent-primary animate-pulse" />}
-                      {run.status === 'running' && <Play size={10} className="text-accent-primary" />}
+                      {run.status === 'running' && <Loader2 size={10} className="text-accent-primary animate-spin" />}
                       {run.status === 'passed' && <CheckCircle2 size={10} className="text-emerald-500" />}
                       {run.status === 'failed' && <AlertCircle size={10} className="text-red-500" />}
-                      {['created', 'timed_out', 'error'].includes(run.status) && (
-                        <Loader2 size={10} className="text-text-secondary animate-spin" />
-                      )}
+                      {run.status === 'timed_out' && <Clock size={10} className="text-amber-500" />}
+                      {run.status === 'error' && <AlertCircle size={10} className="text-red-500" />}
+                      {run.status === 'created' && <Clock size={10} className="text-blue-500" />}
                     </div>
                     <span className="text-[10px] font-mono text-text-secondary truncate">
                       {run.id.split('-')[0]}
@@ -90,7 +90,7 @@ export default function DashboardSidebar({
                   </Link>
 
                   <div className="flex items-center gap-2 flex-shrink-0">
-                    <span className="text-[9px] font-semibold text-text-secondary opacity-60">
+                    <span suppressHydrationWarning={true} className="text-[9px] font-semibold text-text-secondary opacity-60">
                       {new Date(run.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
                     </span>
                     {/* Delete Run Trigger */}

@@ -148,7 +148,7 @@ export default function SignInForm({ onSwitchToSignUp, onForgotPassword }: SignI
       </form>
 
       <div className="pt-2 text-center text-xs">
-        <span className="text-text-secondary">Don't have an account? </span>
+        <span className="text-text-secondary">Don&apos;t have an account? </span>
         <button
           type="button"
           onClick={onSwitchToSignUp}
