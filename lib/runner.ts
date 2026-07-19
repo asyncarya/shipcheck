@@ -621,19 +621,11 @@ export async function runBrowserTest(runId: string, startUrl: string, plan: Test
   let page: Page | null = null;
 
   try {
-    const browserlessUrl = process.env.BROWSERLESS_URL;
-    if (browserlessUrl) {
-      console.log(`[Runner] Connecting to Browserless...`);
-      browser = await chromium.connect({
-        wsEndpoint: browserlessUrl,
-      });
-    } else {
-      console.log(`[Runner] Launching local Chromium...`);
-      browser = await chromium.launch({
-        headless: true,
-        args: ['--no-sandbox', '--disable-setuid-sandbox'],
-      });
-    }
+    console.log(`[Runner] Launching local Chromium...`);
+    browser = await chromium.launch({
+      headless: true,
+      args: ['--no-sandbox', '--disable-setuid-sandbox'],
+    });
 
     context = await browser.newContext({
       viewport: { width: 1280, height: 720 },
