@@ -10,7 +10,7 @@ export default function TestSetupForm() {
   const [url, setUrl] = useState('');
   const [task, setTask] = useState('');
   const [expectedResult, setExpectedResult] = useState('');
-  
+
   const [urlError, setUrlError] = useState<string | undefined>(undefined);
   const [urlWarning, setUrlWarning] = useState<string | undefined>(undefined);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -108,13 +108,12 @@ export default function TestSetupForm() {
             onChange={(e) => setUrl(e.target.value)}
             disabled={isSubmitting}
             placeholder="https://example.com"
-            className={`w-full px-4 py-3 bg-bg-app border rounded-xl text-text-primary placeholder-text-secondary/40 focus:outline-none focus:ring-1 transition duration-200 ${
-              urlError 
-                ? 'border-red-500/40 focus:ring-red-500/20 focus:border-red-500' 
-                : urlWarning 
-                ? 'border-amber-500/40 focus:ring-amber-500/20 focus:border-amber-500' 
-                : 'border-border-subtle focus:border-accent-primary focus:ring-accent-primary/20'
-            }`}
+            className={`w-full px-4 py-3 bg-bg-app border rounded-xl text-text-primary placeholder:text-text-secondary/40 placeholder:text-sm focus:outline-none focus:ring-1 transition duration-200 ${urlError
+                ? 'border-red-500/40 focus:ring-red-500/20 focus:border-red-500'
+                : urlWarning
+                  ? 'border-amber-500/40 focus:ring-amber-500/20 focus:border-amber-500'
+                  : 'border-border-subtle focus:border-accent-primary focus:ring-accent-primary/20'
+              }`}
           />
         </div>
 
@@ -149,7 +148,7 @@ export default function TestSetupForm() {
           onChange={(e) => setTask(e.target.value)}
           disabled={isSubmitting}
           placeholder="Describe what to do (e.g. Navigate to contact page, enter email, submit and verify success message)"
-          className="w-full px-4 py-3 bg-bg-app border border-border-subtle rounded-xl text-text-primary placeholder-text-secondary/40 focus:outline-none focus:ring-1 focus:border-accent-primary focus:ring-accent-primary/20 transition duration-200 resize-none"
+          className="w-full px-4 py-3 bg-bg-app border border-border-subtle rounded-xl text-text-primary placeholder:text-text-secondary/40 placeholder:text-sm focus:outline-none focus:ring-1 focus:border-accent-primary focus:ring-accent-primary/20 transition duration-200 resize-none"
         />
       </div>
 
@@ -167,7 +166,7 @@ export default function TestSetupForm() {
           onChange={(e) => setExpectedResult(e.target.value)}
           disabled={isSubmitting}
           placeholder="What is the expected outcome (e.g. A success notification 'Thank you for reaching out' is visible)"
-          className="w-full px-4 py-3 bg-bg-app border border-border-subtle rounded-xl text-text-primary placeholder-text-secondary/40 focus:outline-none focus:ring-1 focus:border-accent-primary focus:ring-accent-primary/20 transition duration-200 resize-none"
+          className="w-full px-4 py-3 bg-bg-app border border-border-subtle rounded-xl text-text-primary placeholder:text-text-secondary/40 placeholder:text-sm focus:outline-none focus:ring-1 focus:border-accent-primary focus:ring-accent-primary/20 transition duration-200 resize-none"
         />
       </div>
 
@@ -177,7 +176,7 @@ export default function TestSetupForm() {
           <ShieldAlert size={13} /> Safety Notice
         </p>
         <p>
-          Run tests only on websites you own or are authorized to test. ShipCheck will interact with the page using browser automation. 
+          Run tests only on websites you own or are authorized to test. ShipCheck will interact with the page using browser automation.
           Do not specify real credentials, personal information, or make purchases during tests.
         </p>
       </div>

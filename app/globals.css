@@ -195,3 +195,13 @@ body {
 .animate-slide-out {
   animation: slideOut 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
+
+/* Hide Scrollbar Utility */
+.no-scrollbar {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
