@@ -73,14 +73,14 @@ export default function StepTimeline({
             <div
               key={step.id}
               onClick={() => hasScreenshot && onSelectStep(step.id)}
-              className={`flex items-center justify-between p-3.5 border rounded-xl transition duration-150 ${borderStyle} ${
+              className={`flex items-center gap-3 justify-between p-3.5 border rounded-xl transition duration-150 min-w-0 ${borderStyle} ${
                 hasScreenshot ? 'cursor-pointer hover:shadow-xs' : 'cursor-default'
               }`}
             >
-              <div className="flex items-center gap-3">
-                <StatusIcon size={18} className={iconColor} />
-                <div>
-                  <p className={`text-sm ${textColor}`}>{step.description}</p>
+              <div className="flex items-center gap-3 min-w-0">
+                <StatusIcon size={18} className={`${iconColor} flex-shrink-0`} />
+                <div className="min-w-0">
+                  <p className={`text-sm ${textColor} break-words`}>{step.description}</p>
                   <div className="flex items-center gap-2 mt-0.5">
                     <span className="text-[10px] font-mono uppercase bg-bg-app text-text-secondary px-1.5 py-0.5 rounded border border-border-subtle">
                       {step.action}

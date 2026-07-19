@@ -249,9 +249,8 @@ export default function Home() {
       {/* Header */}
       <header className="w-full max-w-7xl mx-auto px-6 py-6 flex justify-between items-center z-10 border-b border-border-subtle/40">
         <div className="flex items-center gap-2">
-          <img src="/logo.png" alt="ShipCheck Logo" className="w-8 h-8 rounded-lg object-cover bg-accent-glow border border-border-subtle" />
-          <span className="font-bold text-lg tracking-tight font-serif-anthropic text-text-primary">ShipCheck</span>
-          <span className="text-[10px] uppercase font-bold border border-border-subtle bg-bg-card text-text-secondary px-2 py-0.5 rounded-full tracking-wide">MVP</span>
+          <div className="w-8 h-8 rounded-lg bg-accent-glow border border-border-subtle flex items-center justify-center font-bold text-xs font-serif-anthropic text-accent-primary">SC</div>
+          <span className="font-bold text-lg tracking-tight font-serif-anthropic"><span className="text-black dark:text-white">Ship</span><span className="text-accent-primary">Check</span></span>
         </div>
         <div className="flex items-center gap-3">
           {!hasKeys ? (
@@ -291,7 +290,7 @@ export default function Home() {
             // Logged out
             <Link
               href="/auth"
-              className="group flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-text-secondary hover:text-text-primary transition duration-200 border border-border-subtle bg-bg-card/50 px-3.5 py-1.5 rounded-lg active:scale-95 shadow-2xs"
+              className="hidden sm:flex group items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-text-secondary hover:text-text-primary transition duration-200 border border-border-subtle bg-bg-card/50 px-3.5 py-1.5 rounded-lg active:scale-95 shadow-2xs"
             >
               <span>Get started</span>
               <ArrowRight size={12} className="group-hover:translate-x-0.5 transition-transform duration-200" />
@@ -458,7 +457,7 @@ export default function Home() {
             <div className="flex-1 flex flex-col min-h-0 space-y-4">
               <h4 className="text-xs font-bold text-text-secondary uppercase tracking-wider">Simulated Timeline</h4>
 
-              <div ref={stepsContainerRef} className="flex-1 overflow-y-auto space-y-2">
+              <div ref={stepsContainerRef} className="flex-1 overflow-y-auto no-scrollbar space-y-2">
                 {SIMULATOR_STEPS.map((step, idx) => {
                   const status = stepStatuses[idx];
 
@@ -505,7 +504,7 @@ export default function Home() {
                 <Terminal size={12} className="text-accent-primary" />
                 <span className="font-bold">Automator Console Output</span>
               </div>
-              <div ref={consoleContainerRef} className="flex-1 overflow-y-auto space-y-1.5 text-text-secondary/80 select-none">
+              <div ref={consoleContainerRef} className="flex-1 overflow-y-auto no-scrollbar space-y-1.5 text-text-secondary/80 select-none">
                 {currentStepIdx >= 0 && <p className="text-text-secondary/40">&gt; Starting automated QA worker thread...</p>}
                 {currentStepIdx >= 1 && <p className="text-emerald-500">&gt; [OK] Connection established with target URL</p>}
                 {currentStepIdx >= 2 && <p className="text-text-secondary/60">&gt; [FILL] Injected string into Name input field</p>}
@@ -623,8 +622,8 @@ export default function Home() {
           <div className="w-full grid grid-cols-1 md:grid-cols-3 gap-8 pb-12 text-left">
             <div className="space-y-3">
               <div className="flex items-center gap-2">
-                <img src="/logo.png" alt="ShipCheck Logo" className="w-6 h-6 rounded-md object-cover bg-accent-glow border border-border-subtle" />
-                <span className="font-bold text-md tracking-tight font-serif-anthropic text-text-primary">ShipCheck</span>
+                <div className="w-6 h-6 rounded-md bg-accent-glow border border-border-subtle flex items-center justify-center font-bold text-[10px] font-serif-anthropic text-accent-primary">SC</div>
+                <span className="font-bold text-md tracking-tight font-serif-anthropic"><span className="text-black dark:text-white">Ship</span><span className="text-accent-primary">Check</span></span>
               </div>
               <p className="text-[11px] text-text-secondary leading-relaxed max-w-xs">
                 AI-powered web verification engine translating natural language test intents to structured Playwright scenarios.

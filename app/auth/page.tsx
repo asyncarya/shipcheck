@@ -5,8 +5,8 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { createClient, hasSupabase } from '@/lib/supabase';
 import ThemeToggle from '@/components/ThemeToggle';
-import { 
-  Shield, Sparkles, Mail, Lock, Loader2, AlertCircle, 
+import {
+  Shield, Sparkles, Mail, Lock, Loader2, AlertCircle,
   Key, Check, User, ArrowLeft
 } from 'lucide-react';
 
@@ -117,7 +117,7 @@ export default function AuthPage() {
           }
         });
         if (signUpErr) throw signUpErr;
-        
+
         if (data.session) {
           setSuccess('Account created successfully! Redirecting...');
           setTimeout(() => router.push('/dashboard'), 1000);
@@ -161,17 +161,17 @@ export default function AuthPage() {
 
   return (
     <div className="min-h-screen w-full grid md:grid-cols-2 bg-bg-app text-text-primary overflow-x-hidden font-sans">
-      
+
       {/* Left Column: Awwwards Editorial Branding Showcase */}
-      <div className="relative bg-bg-card text-text-primary p-8 sm:p-12 flex flex-col justify-between overflow-hidden border-r border-border-subtle/50">
+      <div className="hidden md:flex relative bg-bg-card text-text-primary p-8 sm:p-12 flex-col justify-between overflow-hidden border-r border-border-subtle/50">
         {/* Glow spotlight blob */}
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[480px] h-[480px] rounded-full bg-accent-primary/5 blur-[100px] pointer-events-none" />
-        
+
         {/* Top Header Logo */}
         <div className="flex items-center gap-2 z-10">
           <Link href="/" className="flex items-center gap-2">
-            <img src="/logo.png" alt="ShipCheck Logo" className="w-8 h-8 rounded-lg object-cover bg-accent-glow border border-border-subtle" />
-            <span className="font-bold text-lg tracking-tight font-serif-anthropic text-text-primary">ShipCheck</span>
+            <div className="w-8 h-8 rounded-lg bg-accent-glow border border-border-subtle flex items-center justify-center font-bold text-xs font-serif-anthropic text-accent-primary">SC</div>
+            <span className="font-bold text-lg tracking-tight font-serif-anthropic"><span className="text-black dark:text-white">Ship</span><span className="text-accent-primary">Check</span></span>
           </Link>
         </div>
 
@@ -193,11 +193,11 @@ export default function AuthPage() {
               <Sparkles size={11} className="text-accent-primary animate-pulse" />
               <span>ShipCheck Lifecycle Engine</span>
             </h4>
-            
+
             <div className="relative pl-6 border-l border-border-subtle/80 space-y-6 text-left">
               {/* Node 1 */}
               <div className={`relative transition-all duration-500 ${activeInfoIdx === 0 ? 'opacity-100' : 'opacity-40'}`}>
-                <div className={`absolute -left-[31px] top-0.5 w-4 h-4 rounded-full bg-bg-card border transition-all duration-500 flex items-center justify-center ${activeInfoIdx === 0 ? 'border-accent-primary bg-accent-glow scale-110 shadow-xs' : 'border-border-subtle'}`}>
+                <div className={`absolute -left-[32.5px] top-0.5 w-4 h-4 rounded-full bg-bg-card border transition-all duration-500 flex items-center justify-center ${activeInfoIdx === 0 ? 'border-accent-primary bg-accent-glow scale-110 shadow-xs' : 'border-border-subtle'}`}>
                   <div className={`w-1.5 h-1.5 rounded-full transition-all duration-500 ${activeInfoIdx === 0 ? 'bg-accent-primary' : 'bg-text-secondary/30'}`} />
                 </div>
                 <h5 className={`text-[11px] font-bold uppercase tracking-wide transition-colors duration-500 ${activeInfoIdx === 0 ? 'text-accent-primary' : 'text-text-primary'}`}>
@@ -210,7 +210,7 @@ export default function AuthPage() {
 
               {/* Node 2 */}
               <div className={`relative transition-all duration-500 ${activeInfoIdx === 1 ? 'opacity-100' : 'opacity-40'}`}>
-                <div className={`absolute -left-[31px] top-0.5 w-4 h-4 rounded-full bg-bg-card border transition-all duration-500 flex items-center justify-center ${activeInfoIdx === 1 ? 'border-accent-primary bg-accent-glow scale-110 shadow-xs' : 'border-border-subtle'}`}>
+                <div className={`absolute -left-[32.5px] top-0.5 w-4 h-4 rounded-full bg-bg-card border transition-all duration-500 flex items-center justify-center ${activeInfoIdx === 1 ? 'border-accent-primary bg-accent-glow scale-110 shadow-xs' : 'border-border-subtle'}`}>
                   <div className={`w-1.5 h-1.5 rounded-full transition-all duration-500 ${activeInfoIdx === 1 ? 'bg-accent-primary' : 'bg-text-secondary/30'}`} />
                 </div>
                 <h5 className={`text-[11px] font-bold uppercase tracking-wide transition-colors duration-500 ${activeInfoIdx === 1 ? 'text-accent-primary' : 'text-text-primary'}`}>
@@ -223,7 +223,7 @@ export default function AuthPage() {
 
               {/* Node 3 */}
               <div className={`relative transition-all duration-500 ${activeInfoIdx === 2 ? 'opacity-100' : 'opacity-40'}`}>
-                <div className={`absolute -left-[31px] top-0.5 w-4 h-4 rounded-full bg-bg-card border transition-all duration-500 flex items-center justify-center ${activeInfoIdx === 2 ? 'border-accent-primary bg-accent-glow scale-110 shadow-xs' : 'border-border-subtle'}`}>
+                <div className={`absolute -left-[32.5px] top-0.5 w-4 h-4 rounded-full bg-bg-card border transition-all duration-500 flex items-center justify-center ${activeInfoIdx === 2 ? 'border-accent-primary bg-accent-glow scale-110 shadow-xs' : 'border-border-subtle'}`}>
                   <div className={`w-1.5 h-1.5 rounded-full transition-all duration-500 ${activeInfoIdx === 2 ? 'bg-accent-primary' : 'bg-text-secondary/30'}`} />
                 </div>
                 <h5 className={`text-[11px] font-bold uppercase tracking-wide transition-colors duration-500 ${activeInfoIdx === 2 ? 'text-accent-primary' : 'text-text-primary'}`}>
@@ -239,78 +239,48 @@ export default function AuthPage() {
 
         {/* Footer Brand Label */}
         <div className="text-[10px] text-text-secondary/70 font-medium z-10 flex items-center gap-1.5" suppressHydrationWarning>
-          <img src="/logo.png" alt="ShipCheck Logo" className="w-5 h-5 rounded-md object-cover bg-accent-glow border border-border-subtle" />
-          <span>&copy; {new Date().getFullYear()} ShipCheck Workspace. All rights reserved.</span>
+          <div className="w-5 h-5 rounded-md bg-accent-glow border border-border-subtle flex items-center justify-center font-bold text-[8px] font-serif-anthropic text-accent-primary">SC</div>
+          <span>&copy; {new Date().getFullYear()} <span className="font-serif-anthropic font-bold"><span className="text-black dark:text-white">Ship</span><span className="text-accent-primary">Check</span></span> Workspace. All rights reserved.</span>
         </div>
       </div>
 
       {/* Right Column: Authentication Card Form */}
       <div className="relative p-8 sm:p-12 md:p-20 flex flex-col justify-center items-center bg-bg-app border-l border-border-subtle/20">
-        
-        {/* Top-Right Toggle & Back Action */}
-        <div className="absolute top-8 left-8 right-8 flex items-center justify-between z-10">
-          <Link
-            href="/"
-            className="group flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-text-secondary hover:text-text-primary transition duration-200 border border-border-subtle bg-bg-card/50 px-3 py-1.5 rounded-lg active:scale-95 shadow-2xs"
-          >
-            <ArrowLeft size={12} className="group-hover:-translate-x-0.5 transition-transform duration-200" />
-            <span>Home</span>
+
+        {/* Top-Right Toggle & Actions */}
+        <div className="absolute top-8 left-8 right-8 flex items-center justify-between md:justify-end z-10">
+          {/* Mobile Logo Link */}
+          <Link href="/" className="md:hidden flex items-center gap-2 active:scale-95 transition">
+            <div className="w-8 h-8 rounded-lg bg-accent-glow border border-border-subtle flex items-center justify-center font-bold text-xs font-serif-anthropic text-accent-primary">SC</div>
+            <span className="font-bold text-lg tracking-tight font-serif-anthropic"><span className="text-black dark:text-white">Ship</span><span className="text-accent-primary">Check</span></span>
           </Link>
+
           <ThemeToggle />
         </div>
 
         <div className="w-full max-w-sm space-y-6 animate-fade-in-up">
           <div className="space-y-2">
             <h2 className="text-2xl font-bold tracking-tight text-text-primary font-serif-anthropic">
-              {isResetPassword 
-                ? 'Update your password' 
-                : isForgotPassword 
-                  ? 'Reset your password' 
-                  : isLogin 
-                    ? 'Welcome back' 
+              {isResetPassword
+                ? 'Update your password'
+                : isForgotPassword
+                  ? 'Reset your password'
+                  : isLogin
+                    ? 'Welcome back'
                     : 'Create your account'}
             </h2>
             <p className="text-xs text-text-secondary leading-relaxed">
-              {isResetPassword 
-                ? 'Enter a new strong password for your workspace.' 
-                : isForgotPassword 
-                  ? 'Enter your work email and we will send a recovery link.' 
-                  : isLogin 
-                    ? 'Sign in to your ShipCheck workspace.' 
+              {isResetPassword
+                ? 'Enter a new strong password for your workspace.'
+                : isForgotPassword
+                  ? 'Enter your work email and we will send a recovery link.'
+                  : isLogin
+                    ? 'Sign in to your ShipCheck workspace.'
                     : 'Start building securely with ShipCheck.'}
             </p>
           </div>
 
-          {/* Social Auth Buttons (Mock Parity with Screenshot) */}
-          {!isForgotPassword && !isResetPassword && (
-            <>
-              <div className="grid grid-cols-2 gap-3">
-                <button
-                  type="button"
-                  onClick={handleOAuthClick}
-                  className="flex items-center justify-center gap-2 py-2.5 border border-border-subtle rounded-xl text-xs font-bold bg-bg-card/50 text-text-primary hover:bg-bg-card transition duration-200 cursor-pointer"
-                >
-                  <svg className="w-3.5 h-3.5 text-accent-primary" viewBox="0 0 24 24" fill="currentColor"><path d="M12.24 10.285V13.4h6.887c-.275 1.565-1.88 4.604-6.887 4.604-4.33 0-7.859-3.578-7.859-8s3.529-8 7.859-8c2.46 0 4.105 1.025 5.047 1.926l2.427-2.334C17.955 2.192 15.34 1 12.24 1 5.86 1 .7 6.16.7 12.5s5.16 11.5 11.54 11.5c6.66 0 11.1-4.683 11.1-11.3 0-.768-.082-1.354-.185-1.915H12.24z"/></svg>
-                  <span>Google</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={handleOAuthClick}
-                  className="flex items-center justify-center gap-2 py-2.5 border border-border-subtle rounded-xl text-xs font-bold bg-bg-card/50 text-text-primary hover:bg-bg-card transition duration-200 cursor-pointer"
-                >
-                  <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path fillRule="evenodd" clipRule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482C19.138 20.193 22 16.44 22 12.017 22 6.484 17.522 2 12 2z"/></svg>
-                  <span>GitHub</span>
-                </button>
-              </div>
 
-              {/* Separator */}
-              <div className="relative flex py-2 items-center">
-                <div className="flex-grow border-t border-border-subtle/50"></div>
-                <span className="flex-shrink mx-4 text-[10px] text-text-secondary/50 font-bold uppercase tracking-wider">or continue with</span>
-                <div className="flex-grow border-t border-border-subtle/50"></div>
-              </div>
-            </>
-          )}
 
           {error && (
             <div className="p-3 text-xs bg-red-500/5 border border-red-500/20 text-red-500 rounded-xl flex items-start gap-2 animate-in slide-in-from-top-2 duration-200">
@@ -327,7 +297,7 @@ export default function AuthPage() {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            
+
             {/* Conditional Fields: First and Last Name for Sign Up */}
             {!isLogin && !isForgotPassword && !isResetPassword && (
               <div className="grid grid-cols-2 gap-3">
@@ -389,8 +359,8 @@ export default function AuthPage() {
                     {isResetPassword ? 'New password' : 'Password'}
                   </label>
                   {isLogin && (
-                    <button 
-                      type="button" 
+                    <button
+                      type="button"
                       onClick={() => {
                         setIsForgotPassword(true);
                         setError(null);
@@ -498,6 +468,23 @@ export default function AuthPage() {
             )}
           </div>
         </div>
+
+        {/* Mobile Brand Footer */}
+        <div className="md:hidden absolute bottom-8 left-8 right-8 space-y-4 opacity-80">
+          <div className="flex flex-col items-center text-center space-y-3">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-lg bg-accent-glow border border-border-subtle flex items-center justify-center font-bold text-xs font-serif-anthropic text-accent-primary">SC</div>
+              <span className="font-bold text-lg tracking-tight font-serif-anthropic"><span className="text-black dark:text-white">Ship</span><span className="text-accent-primary">Check</span></span>
+            </div>
+            <p className="text-[11px] text-text-secondary leading-relaxed">
+              AI-powered web verification engine translating natural language test intents to structured Playwright scenarios.
+            </p>
+          </div>
+          <div className="pt-3 border-t border-border-subtle/30 text-[9px] text-text-secondary/60 font-medium text-center" suppressHydrationWarning>
+            &copy; {new Date().getFullYear()} <span className="font-serif-anthropic font-bold"><span className="text-black dark:text-white">Ship</span><span className="text-accent-primary">Check</span></span> Workspace. All rights reserved.
+          </div>
+        </div>
+
       </div>
     </div>
   );

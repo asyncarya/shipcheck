@@ -55,9 +55,9 @@ export default function ScreenshotViewer({
         </div>
         
         {/* Address bar */}
-        <div className="flex-1 flex items-center gap-2 px-3 py-1.5 bg-bg-app border border-border-subtle rounded-xl text-text-secondary text-xs font-mono truncate select-all">
-          <span className="w-2 h-2 rounded-full bg-accent-primary/40" />
-          <span className="flex-1 truncate">{currentUrl || 'about:blank'}</span>
+        <div className="flex-1 flex min-w-0 items-center gap-2 px-3 py-1.5 bg-bg-app border border-border-subtle rounded-xl text-text-secondary text-xs font-mono select-all">
+          <span className="w-2 h-2 flex-shrink-0 rounded-full bg-accent-primary/40" />
+          <span className="flex-1 truncate min-w-0">{currentUrl || 'about:blank'}</span>
           {isLive && <RefreshCw size={10} className="animate-spin text-accent-primary" />}
         </div>
       </div>
