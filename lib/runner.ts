@@ -44,7 +44,7 @@ async function saveScreenshot(page: Page, runId: string, stepId: string, isLive:
     }
     const screenshotPath = path.join(screenshotsDir, fileName);
     await page.screenshot({ path: screenshotPath, type: 'jpeg', quality: isLive ? 50 : 80 });
-    return `/screenshots/${fileName}`;
+    return `/api/screenshots/${fileName}`;
   } catch (localError) {
     console.error('[Runner] Local screenshot storage failed:', localError);
     return '';
