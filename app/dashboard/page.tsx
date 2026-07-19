@@ -4,6 +4,8 @@ import { createServer } from '@/lib/supabaseServer';
 import { runStore } from '@/lib/runStore';
 import WorkspaceDashboard from '@/components/WorkspaceDashboard';
 
+export const dynamic = 'force-dynamic';
+
 export default async function NewTestPage() {
   const hasSupabaseKey = hasSupabase();
   let userEmail: string | null = null;
