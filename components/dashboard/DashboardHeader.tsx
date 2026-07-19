@@ -26,16 +26,19 @@ export default function DashboardHeader({
   setShowMobileHistory,
 }: DashboardHeaderProps) {
   return (
-    <div className="absolute top-6 right-6 flex items-center justify-end z-40 gap-3">
-      {/* Mobile history trigger */}
-      <button 
-        className="md:hidden w-10 h-10 rounded-xl bg-bg-card hover:bg-border-subtle border border-border-subtle flex items-center justify-center text-text-secondary hover:text-text-primary transition shadow-sm active:scale-95"
-        onClick={() => setShowMobileHistory(true)}
-      >
-        <Menu size={16} />
-      </button>
+    <div className="absolute top-6 left-6 right-6 flex items-center justify-between z-40">
+      {/* Left side: Mobile history trigger */}
+      <div>
+        <button 
+          className="md:hidden w-10 h-10 rounded-xl bg-bg-card hover:bg-border-subtle border border-border-subtle flex items-center justify-center text-text-secondary hover:text-text-primary transition shadow-sm active:scale-95"
+          onClick={() => setShowMobileHistory(true)}
+        >
+          <Menu size={16} />
+        </button>
+      </div>
 
-      {hasSupabaseKey && (
+      {/* Right side: Profile and Theme Actions */}
+      <div className="flex items-center gap-3">
         <div className="relative">
           {/* Profile Circle Trigger */}
           <button
@@ -106,6 +109,7 @@ export default function DashboardHeader({
         </div>
       )}
       <ThemeToggle />
+      </div>
     </div>
   );
 }
