@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { runStore } from '@/lib/runStore';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ runId: string }> }
